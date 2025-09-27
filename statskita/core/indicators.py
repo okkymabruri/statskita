@@ -347,7 +347,9 @@ class IndicatorCalculator:
         )
 
         # unemployment rate
-        results["unemployment_rate"] = self.calculate_unemployment_rate(by=by, confidence_level=confidence_level)
+        results["unemployment_rate"] = self.calculate_unemployment_rate(
+            by=by, confidence_level=confidence_level
+        )
 
         # employment rate
         results["employment_rate"] = self.calculate_employment_rate(
@@ -429,9 +431,7 @@ def calculate_indicators(
 
         if english_name not in indicator_methods:
             available = list(indicator_methods.keys()) + list(indonesian_aliases.keys())
-            raise ValueError(
-                f"Unknown indicator: {indicator}. Available: {available}"
-            )
+            raise ValueError(f"Unknown indicator: {indicator}. Available: {available}")
 
         method = indicator_methods[english_name]
 

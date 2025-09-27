@@ -40,23 +40,23 @@ def load_config_with_inheritance(config_path: Path) -> Dict[str, Any]:
     Returns:
         Merged configuration
     """
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
     # check for inheritance
-    if 'extends' in config:
-        base_path = config_path.parent / config['extends']
+    if "extends" in config:
+        base_path = config_path.parent / config["extends"]
         if base_path.exists():
             # load base config
-            with open(base_path, 'r') as f:
+            with open(base_path, "r") as f:
                 base_config = yaml.safe_load(f)
 
             # merge overrides if present
-            if 'overrides' in config:
-                merged = deep_merge(base_config, config['overrides'])
+            if "overrides" in config:
+                merged = deep_merge(base_config, config["overrides"])
                 # keep non-override fields from wave config
                 for key in config:
-                    if key not in ['extends', 'overrides']:
+                    if key not in ["extends", "overrides"]:
                         merged[key] = config[key]
                 return merged
             else:

@@ -78,7 +78,9 @@ def dbf_to_parquet(
         df.write_parquet(parquet_path, compression="snappy")
 
         elapsed = time.time() - start
-        size_reduction = (dbf_path.stat().st_size - parquet_path.stat().st_size) / dbf_path.stat().st_size * 100
+        size_reduction = (
+            (dbf_path.stat().st_size - parquet_path.stat().st_size) / dbf_path.stat().st_size * 100
+        )
 
         print(f"Converted in {elapsed:.1f}s")
         print(f"File size reduced by {size_reduction:.0f}%")

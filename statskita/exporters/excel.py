@@ -22,19 +22,12 @@ def export_excel(
         include_index: Add row numbers (ignored - for compat)
     """
     # export to excel
-    df.write_excel(
-        workbook=str(file_path),
-        worksheet=sheet_name,
-        include_header=True,
-        **kwargs
-    )
+    df.write_excel(workbook=str(file_path), worksheet=sheet_name, include_header=True, **kwargs)
     print(f"Exported to: {file_path}")
 
 
 def export_excel_multiple_sheets(
-    dataframes: Dict[str, pl.DataFrame],
-    file_path: Union[str, Path],
-    **kwargs
+    dataframes: Dict[str, pl.DataFrame], file_path: Union[str, Path], **kwargs
 ) -> None:
     """Export multiple DataFrames to Excel sheets.
 
@@ -49,12 +42,7 @@ def export_excel_multiple_sheets(
 
     # write each dataframe to a separate sheet
     for sheet_name, df in dataframes.items():
-        df.write_excel(
-            workbook=workbook,
-            worksheet=sheet_name,
-            include_header=True,
-            **kwargs
-        )
+        df.write_excel(workbook=workbook, worksheet=sheet_name, include_header=True, **kwargs)
 
     # close workbook
     workbook.close()

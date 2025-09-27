@@ -48,10 +48,7 @@ class SurveyEstimate:
         )
 
     def __repr__(self) -> str:  # pragma: no cover
-        return (
-            f"{self.value:0.2f} ± {self.se:0.2f} "
-            f"(95% CI {self.ci_low:0.2f}–{self.ci_high:0.2f})"
-        )
+        return f"{self.value:0.2f} ± {self.se:0.2f} (95% CI {self.ci_low:0.2f}–{self.ci_high:0.2f})"
 
     # backward compatibility properties
     @property

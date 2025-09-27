@@ -25,25 +25,21 @@ class SakernasLoader(BaseLoader):
         "kec": ["KEC", "B1R3", "R103"],
         "desa": ["DESA", "B1R4", "R104"],
         "urb_rur": ["B1R5", "R105", "URBAN", "RURAL"],
-
         # old names (TODO: deprecate)
         "province": ["PROV", "B1R1", "R101", "kode_prov"],
         "regency": ["KAB", "B1R2", "R102"],
         "district": ["KEC", "B1R3", "R103"],
         "village": ["DESA", "B1R4", "R104"],
         "urban_rural": ["B1R5", "R105", "URBAN", "RURAL"],
-
         # weights etc
         "weight": ["WEIGHT", "WTPER", "WT", "WFINAL"],
         "strata": ["STRATA", "STRATUM", "STRT"],
         "psu": ["PSU", "KLUSTER", "CLUSTER"],
-
         # demo
         "age": ["B4K5", "R405", "AGE", "UMUR"],
         "gender": ["B4K4", "R404", "JENIS_KELAMIN"],
         "education": ["B4K8", "R408", "PENDIDIKAN"],
         "marital_status": ["B4K6", "R406", "STATUS_KAWIN"],
-
         # labor
         "work_status": ["B5R1", "R501", "STATUS_KERJA"],
         "industry": ["B5R16A", "R516A", "INDUSTRI_UTAMA"],
@@ -89,7 +85,13 @@ class SakernasLoader(BaseLoader):
         self._config: Optional[Dict[str, Any]] = None
         self._reverse_mappings: Optional[Dict[str, str]] = None
 
-    def load(self, file_path: Union[str, Path], wave: Optional[str] = None, layout_path: Optional[Union[str, Path]] = None, **kwargs) -> pl.DataFrame:
+    def load(
+        self,
+        file_path: Union[str, Path],
+        wave: Optional[str] = None,
+        layout_path: Optional[Union[str, Path]] = None,
+        **kwargs,
+    ) -> pl.DataFrame:
         """Load SAKERNAS data file (.sav, .dta, or .dbf).
 
         Args:
@@ -155,7 +157,7 @@ class SakernasLoader(BaseLoader):
                         row_dict = {}
                         for field in table.field_names:
                             value = record[field]
-                            if value is None or (isinstance(value, str) and value.strip() == ''):
+                            if value is None or (isinstance(value, str) and value.strip() == ""):
                                 row_dict[field] = None
                             else:
                                 row_dict[field] = value
@@ -214,14 +216,14 @@ class SakernasLoader(BaseLoader):
         psu_col = self._metadata.psu_variable
 
         # override with config if available
-        if self._config and 'survey_design' in self._config:
-            survey_config = self._config['survey_design']
-            if survey_config.get('weight_var'):
-                weight_col = survey_config['weight_var']
-            if survey_config.get('strata_var'):
-                strata_col = survey_config['strata_var']
-            if survey_config.get('psu_var'):
-                psu_col = survey_config['psu_var']
+        if self._config and "survey_design" in self._config:
+            survey_config = self._config["survey_design"]
+            if survey_config.get("weight_var"):
+                weight_col = survey_config["weight_var"]
+            if survey_config.get("strata_var"):
+                strata_col = survey_config["strata_var"]
+            if survey_config.get("psu_var"):
+                psu_col = survey_config["psu_var"]
 
         return SurveyDesignInfo(
             weight_col=weight_col,
@@ -233,7 +235,9 @@ class SakernasLoader(BaseLoader):
             else None,
         )
 
-    def _load_config(self, wave: Optional[str] = None, layout_path: Optional[Union[str, Path]] = None):
+    def _load_config(
+        self, wave: Optional[str] = None, layout_path: Optional[Union[str, Path]] = None
+    ):
         """Load configuration using two-tier system.
 
         Priority:
@@ -258,7 +262,7 @@ class SakernasLoader(BaseLoader):
         # tier 2: defaults
         defaults_path = config_dir / "defaults.yaml"
         try:
-            with open(defaults_path, 'r') as f:
+            with open(defaults_path, "r") as f:
                 self._config = yaml.safe_load(f)
             self._build_reverse_mappings()
         except Exception as e:
@@ -269,12 +273,12 @@ class SakernasLoader(BaseLoader):
 
     def _build_reverse_mappings(self):
         """Build reverse mapping from canonical names to raw field names."""
-        if not self._config or 'fields' not in self._config:
+        if not self._config or "fields" not in self._config:
             return
 
         self._reverse_mappings = {}
-        for raw_name, field_info in self._config['fields'].items():
-            canon_name = field_info.get('canon_name', raw_name.lower())
+        for raw_name, field_info in self._config["fields"].items():
+            canon_name = field_info.get("canon_name", raw_name.lower())
             if canon_name not in self._reverse_mappings:
                 self._reverse_mappings[canon_name] = []
             self._reverse_mappings[canon_name].append(raw_name)
@@ -397,20 +401,20 @@ class SakernasLoader(BaseLoader):
                 'validation': 'range(0, 120)'
             }
         """
-        if not self._config or 'fields' not in self._config:
+        if not self._config or "fields" not in self._config:
             print("Warning: No configuration loaded")
             return None
 
-        fields = self._config['fields']
+        fields = self._config["fields"]
 
         # if no variable specified, list all
         if variable_name is None:
             result = {}
             for field_name, field_info in fields.items():
                 result[field_name] = {
-                    'canon_name': field_info.get('canon_name', field_name.lower()),
-                    'label': field_info.get('label', ''),
-                    'category': field_info.get('category', 'unknown')
+                    "canon_name": field_info.get("canon_name", field_name.lower()),
+                    "label": field_info.get("label", ""),
+                    "category": field_info.get("category", "unknown"),
                 }
             return result
 
@@ -418,28 +422,28 @@ class SakernasLoader(BaseLoader):
         if variable_name in fields:
             field = fields[variable_name]
             return {
-                'raw_name': variable_name,
-                'canon_name': field.get('canon_name', variable_name.lower()),
-                'label': field.get('label', ''),
-                'dtype': field.get('dtype', 'C'),
-                'length': field.get('length'),
-                'category': field.get('category', 'unknown'),
-                'values': field.get('values'),
-                'validation': field.get('validation')
+                "raw_name": variable_name,
+                "canon_name": field.get("canon_name", variable_name.lower()),
+                "label": field.get("label", ""),
+                "dtype": field.get("dtype", "C"),
+                "length": field.get("length"),
+                "category": field.get("category", "unknown"),
+                "values": field.get("values"),
+                "validation": field.get("validation"),
             }
 
         # check canonical name
         for raw_name, field_info in fields.items():
-            if field_info.get('canon_name') == variable_name.lower():
+            if field_info.get("canon_name") == variable_name.lower():
                 return {
-                    'raw_name': raw_name,
-                    'canon_name': field_info.get('canon_name'),
-                    'label': field_info.get('label', ''),
-                    'dtype': field_info.get('dtype', 'C'),
-                    'length': field_info.get('length'),
-                    'category': field_info.get('category', 'unknown'),
-                    'values': field_info.get('values'),
-                    'validation': field_info.get('validation')
+                    "raw_name": raw_name,
+                    "canon_name": field_info.get("canon_name"),
+                    "label": field_info.get("label", ""),
+                    "dtype": field_info.get("dtype", "C"),
+                    "length": field_info.get("length"),
+                    "category": field_info.get("category", "unknown"),
+                    "values": field_info.get("values"),
+                    "validation": field_info.get("validation"),
                 }
 
         print(f"Variable '{variable_name}' not found in configuration")
@@ -460,16 +464,16 @@ class SakernasLoader(BaseLoader):
               2: Perempuan
             DEM_AGE      209. Umur (tahun)
         """
-        if not self._config or 'fields' not in self._config:
+        if not self._config or "fields" not in self._config:
             print("No configuration loaded")
             return
 
-        fields = self._config['fields']
+        fields = self._config["fields"]
 
         # group by category
         categories = {}
         for field_name, field_info in fields.items():
-            cat = field_info.get('category', 'uncategorized')
+            cat = field_info.get("category", "uncategorized")
             if category and cat != category:
                 continue
             if cat not in categories:
@@ -481,12 +485,12 @@ class SakernasLoader(BaseLoader):
             print(f"\n{cat.title()} Variables:")
             print("-" * 60)
             for var_name, var_info in vars:
-                label = var_info.get('label', '')
+                label = var_info.get("label", "")
                 print(f"{var_name:15} {label}")
 
                 # print value labels if present
-                if 'values' in var_info:
-                    for code, val_label in var_info['values'].items():
+                if "values" in var_info:
+                    for code, val_label in var_info["values"].items():
                         print(f"  {code}: {val_label}")
 
     def list_categories(self) -> List[str]:
@@ -499,13 +503,13 @@ class SakernasLoader(BaseLoader):
             >>> loader.list_categories()
             ['admin', 'demographics', 'work_status', ...]
         """
-        if not self._config or 'fields' not in self._config:
+        if not self._config or "fields" not in self._config:
             print("No configuration loaded")
             return []
 
         categories = set()
-        for field_info in self._config['fields'].values():
-            cat = field_info.get('category', 'uncategorized')
+        for field_info in self._config["fields"].values():
+            cat = field_info.get("category", "uncategorized")
             categories.add(cat)
 
         return sorted(list(categories))
@@ -528,38 +532,40 @@ class SakernasLoader(BaseLoader):
 
         # count fields per category
         category_counts = {}
-        for field_info in self._config.get('fields', {}).values():
-            cat = field_info.get('category', 'uncategorized')
+        for field_info in self._config.get("fields", {}).values():
+            cat = field_info.get("category", "uncategorized")
             category_counts[cat] = category_counts.get(cat, 0) + 1
 
         # category descriptions (from defaults.yaml or hardcoded)
         category_descriptions = {
-            'admin': 'Administrative identifiers',
-            'survey_design': 'Survey weights and design variables',
-            'household': 'Household composition',
-            'demographics': 'Personal characteristics',
-            'migration': 'Migration history',
-            'disability': 'Disability status',
-            'ict_usage': 'Technology and internet usage',
-            'work_status': 'Employment status',
-            'absent_work': 'Temporary absence from work',
-            'main_job': 'Main job characteristics',
-            'main_job_time': 'Working hours and duration',
-            'secondary_job': 'Additional employment',
-            'job_seeking': 'Job search activities',
-            'availability': 'Availability for work',
-            'other': 'Miscellaneous fields',
-            'uncategorized': 'Fields without category'
+            "admin": "Administrative identifiers",
+            "survey_design": "Survey weights and design variables",
+            "household": "Household composition",
+            "demographics": "Personal characteristics",
+            "migration": "Migration history",
+            "disability": "Disability status",
+            "ict_usage": "Technology and internet usage",
+            "work_status": "Employment status",
+            "absent_work": "Temporary absence from work",
+            "main_job": "Main job characteristics",
+            "main_job_time": "Working hours and duration",
+            "secondary_job": "Additional employment",
+            "job_seeking": "Job search activities",
+            "availability": "Availability for work",
+            "other": "Miscellaneous fields",
+            "uncategorized": "Fields without category",
         }
 
         print("\nAvailable Categories:")
         print("-" * 70)
         for cat in sorted(category_counts.keys()):
             count = category_counts[cat]
-            desc = category_descriptions.get(cat, '')
+            desc = category_descriptions.get(cat, "")
             print(f"{cat:15} ({count:3} fields)  - {desc}")
 
-        print(f"\nTotal: {sum(category_counts.values())} fields in {len(category_counts)} categories")
+        print(
+            f"\nTotal: {sum(category_counts.values())} fields in {len(category_counts)} categories"
+        )
         print("\nUse loader.print_labels('category_name') to see fields in a category")
 
 

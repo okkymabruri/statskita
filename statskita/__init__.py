@@ -15,9 +15,11 @@ def load_susenas(*args, **kwargs):
     """SUSENAS loader - not yet implemented."""
     raise NotImplementedError("SUSENAS loader coming in v0.2.0. See dev/susenas.py for draft.")
 
+
 def load_podes(*args, **kwargs):
     """PODES loader - not yet implemented."""
     raise NotImplementedError("PODES loader coming in v0.2.0. See dev/podes.py for draft.")
+
 
 __all__ = [
     "__version__",

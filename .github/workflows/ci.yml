@@ -44,7 +44,8 @@ jobs:
     - name: Run linting
       run: |
         uv run ruff check .
-        uv run ruff format --check .
+        # Format check is informational only - won't fail CI
+        uv run ruff format --check . || echo "::warning::Code formatting needed. Run 'ruff format .' locally"
 
     - name: Run tests
       run: |

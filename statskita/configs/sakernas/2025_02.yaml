@@ -1,0 +1,18 @@
+# SAKERNAS February 2025 wave-specific configuration
+# Only contains fields that override or extend the base configuration
+
+dataset: sakernas
+version: '1.0'
+wave: '2025_02'
+extends: base.yaml
+
+# Wave-specific metadata
+metadata:
+  reference_period: "February 2025"
+  sample_design: "Two-stage stratified sampling"
+  coverage: "National coverage, all provinces"
+  age_coverage: "15 years and above"
+
+# No overrides needed for 2025_02 - all fields follow base configuration
+# Future waves can add overrides here if field names or structures change
+overrides: {}

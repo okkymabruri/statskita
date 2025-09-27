@@ -1,0 +1,43 @@
+# Default SAKERNAS configuration
+# Used when no wave-specific config is available
+
+dataset: sakernas
+version: '1.0'
+description: 'Default configuration for SAKERNAS data'
+
+# Default survey design
+survey_design:
+  weight_var: WEIGHT
+  strata_var: STRATA
+  psu_var: PSU
+  ssu_var: SSU
+
+# Default conventions
+conventions:
+  yes_no_fields:
+    description: 'Fields marked with response_type: yes_no use standard coding'
+    values:
+      1: Ya
+      2: Tidak
+  missing_values:
+    description: 'Standard missing value codes'
+    values:
+      8: Tidak tahu
+      9: Tidak menjawab
+      99: Missing
+
+# Available categories for print_labels()
+available_categories:
+  - admin           # Administrative fields (province, district codes)
+  - survey_design   # Survey weights, strata, PSU
+  - household       # Household composition
+  - demographics    # Age, gender, education, marital status
+  - migration       # Migration history
+  - disability      # Disability status
+  - ict_usage       # Technology usage
+  - work_status     # Employment status (working/not working)
+  - absent_work     # Temporary absence from work
+  - main_job        # Main job characteristics
+  - main_job_time   # Working hours, duration
+  - secondary_job   # Additional employment
+  - other           # Miscellaneous fields

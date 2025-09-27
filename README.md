@@ -1,5 +1,7 @@
 # StatsKita
 
+> ⚠️ **v0.1.0 - Alpha Release**: This is an early release. The API may change in future versions. Use in production with caution.
+
 Python toolkit for Indonesian official microdata.
 
 ## TL;DR

@@ -1,0 +1,1361 @@
+dataset: sakernas
+version: '2.0'
+description: Complete SAKERNAS field mappings from BPS Layout February 2025
+survey_design:
+  weight_var: WEIGHT
+  strata_var: STRATA
+  psu_var: PSU
+  ssu_var: SSU
+fields:
+  KLASIFIKAS:
+    label: Klasifikasi Perkotaan Perdesaan
+    dtype: C
+    position: 5
+    category: admin
+    value_labels:
+      1: Perkotaan
+      2: Perdesaan
+  KODE_PROV:
+    label: Kode Provinsi
+    dtype: C
+    position: 4
+    category: admin
+  PPNO:
+    label: 201. Nomor Urut Anggota Rumah Tangga
+    dtype: C
+    position: 11
+    category: admin
+  TAHUN:
+    label: Tahun
+    dtype: N
+    position: 1
+    category: admin
+  URUTAN:
+    label: No Urut
+    dtype: C
+    position: 2
+    category: admin
+  PSU:
+    label: Primary Sampling Unit
+    dtype: C
+    position: 6
+    category: survey_design
+  SSU:
+    label: Secondary Sampling Unit
+    dtype: C
+    position: 7
+    category: survey_design
+  STRATA:
+    label: Strata
+    dtype: C
+    position: 8
+    category: survey_design
+  WEIGHT:
+    label: Penimbang
+    dtype: C
+    position: 3
+    category: survey_design
+  JMLART:
+    label: JUMLAH ANGGOTA RUMAH TANGGA
+    dtype: C
+    position: 9
+    category: household
+  JML_ART5:
+    label: JUMLAH ANGGOTA RUMAH TANGGA YANG BERUMUR 5 TAHUN KE ATAS
+    dtype: C
+    position: 10
+    category: household
+  DEM_AGE:
+    label: 209. Umur
+    dtype: N
+    position: 18
+    category: demographics
+  DEM_BTH_D:
+    label: 208d. Tanggal lahir
+    dtype: C
+    position: 15
+    category: demographics
+  DEM_BTH_M:
+    label: 208m. Bulan lahir
+    dtype: C
+    position: 16
+    category: demographics
+  DEM_BTH_Y:
+    label: 208y. Tahun lahir
+    dtype: C
+    position: 17
+    category: demographics
+  DEM_EDF_KD:
+    label: 304. Kode bidang studi/jurusan pendidikan
+    dtype: C
+    position: 23
+    category: demographics
+  DEM_EDL:
+    label: 302. Jenjang pendidikan tertinggi yang tamatkan
+    dtype: C
+    position: 21
+    category: demographics
+    value_labels:
+      1: Tidak/belum tamat SD
+      2: SD/sederajat
+      3: SMP/sederajat
+      4: SMA/sederajat
+      5: Diploma I/II
+      6: Diploma III
+      7: Diploma IV/S1
+      8: S2/S3
+  DEM_IBU_NO:
+    label: 401. Nomor ibu kandung
+    dtype: C
+    position: 39
+    category: demographics
+  DEM_JMLP:
+    label: 309. Jumlah pelatihan/kursus/training yang diikuti dalam setahun terakhir
+    dtype: C
+    position: 29
+    category: demographics
+  DEM_KDPL1:
+    label: 310_1. Kode pelatihan ke 1 di setahun terakhir
+    dtype: C
+    position: 30
+    category: demographics
+  DEM_KDPL2:
+    label: 310_2. Kode pelatihan ke 2 di setahun terakhir
+    dtype: C
+    position: 32
+    category: demographics
+  DEM_KDPL3:
+    label: 310_3. Kode pelatihan ke 3 di setahun terakhir
+    dtype: C
+    position: 34
+    category: demographics
+  DEM_LLS_M:
+    label: 305m. Bulan lulus sekolah/kuliah pada pendidikan tertinggi yang ditamatkan
+    dtype: C
+    position: 24
+    category: demographics
+  DEM_LLS_Y:
+    label: 305y. Tahun lulus sekolah/kuliah pada pendidikan tertinggi yang ditamatkan
+    dtype: C
+    position: 25
+    category: demographics
+  DEM_MG:
+    label: 313. Sernah mengikuti Program Magang/Praktik Kerja Lapangan (PKL)
+    dtype: C
+    position: 37
+    category: demographics
+  DEM_MGSERT:
+    label: 314. Memperoleh sertifikat dari Program Magang/Praktik Kerja Lapangan (PKL) tersebut
+    dtype: C
+    position: 38
+    category: demographics
+  DEM_MRT:
+    label: 210. Status Perkawinan
+    dtype: C
+    position: 19
+    category: demographics
+    value_labels:
+      1: Belum kawin
+      2: Kawin
+      3: Cerai hidup
+      4: Cerai mati
+  DEM_P1TH:
+    label: 308. Pelatihan bersertifikat maupun tidak bersertifikat dilaksanakan di setahun terakhir
+    dtype: C
+    position: 28
+    category: demographics
+  DEM_PL4MG1:
+    label: 311_1. Pelaksanaan pelatihan ke 1 di 4 minggu terakhir
+    dtype: C
+    position: 31
+    category: demographics
+  DEM_PL4MG2:
+    label: 311_2. Pelaksanaan pelatihan ke 2 di 4 minggu terakhir
+    dtype: C
+    position: 33
+    category: demographics
+  DEM_PL4MG3:
+    label: 311_3. Pelaksanaan pelatihan ke 3 di 4 minggu terakhir
+    dtype: C
+    position: 35
+    category: demographics
+  DEM_PNYLGR:
+    label: 303. Penyelenggara pada pendidikan tertinggi yang ditamatkan
+    dtype: C
+    position: 22
+    category: demographics
+  DEM_REL:
+    label: 207. Hubungan dengan kepala rumah tangga
+    dtype: C
+    position: 14
+    category: demographics
+  DEM_SDGPL:
+    label: 312. Sedang mengikuti pelatihan/ kursus/training (tidak harus bersertifikat)
+    dtype: C
+    position: 36
+    category: demographics
+  DEM_SERT:
+    label: 307. Memperoleh sertifikat dari pelatihan/kursus/training tersebut
+    dtype: C
+    position: 27
+    category: demographics
+  DEM_SEX:
+    label: 204. jenis kelamin
+    dtype: C
+    position: 12
+    category: demographics
+    value_labels:
+      1: Laki-laki
+      2: Perempuan
+  DEM_SKLH:
+    label: 301. Partisipasi sekolah
+    dtype: C
+    position: 20
+    category: demographics
+    value_labels:
+      1: Tidak/belum pernah sekolah
+      2: Masih sekolah
+      3: Tidak sekolah lagi
+  DEM_TRN:
+    label: 306. Pernah mengikuti pelatihan/kursus/ training
+    dtype: C
+    position: 26
+    category: demographics
+  MIG_5TH:
+    label: 407. Tempat tinggal pada Februari 2020 (5 tahun lalu)
+    dtype: C
+    position: 46
+    category: migration
+  MIG_5_KAB:
+    label: 409. Kab/Kota tempat tinggal pada Februari 2020 (5 tahun lalu)
+    dtype: C
+    position: 48
+    category: migration
+  MIG_5_NEG:
+    label: 410. Negara tempat tinggal pada Februari 2020 (5 tahun lalu)
+    dtype: C
+    position: 49
+    category: migration
+  MIG_5_PROV:
+    label: 408. Provinsi tempat tinggal pada Februari 2020 (5 tahun lalu)
+    dtype: C
+    position: 47
+    category: migration
+  MIG_BTH:
+    label: 402. Tempat lahir
+    dtype: C
+    position: 40
+    category: migration
+  MIG_CTZ:
+    label: 412. Kewarganegaraan
+    dtype: C
+    position: 51
+    category: migration
+    value_labels:
+      1: WNI
+      2: WNA
+  MIG_CTZ_N:
+    label: 413. Kode Kewarganegaraan (WNA)
+    dtype: C
+    position: 52
+    category: migration
+  MIG_KAB:
+    label: 404. Kabupaten/Kota tempat dilahirkan
+    dtype: C
+    position: 42
+    category: migration
+  MIG_LARR_M:
+    label: 406m. Bulan tiba di Indonesia
+    dtype: C
+    position: 44
+    category: migration
+  MIG_LARR_Y:
+    label: 406y. Tahun tiba di Indonesia
+    dtype: C
+    position: 45
+    category: migration
+  MIG_NEG:
+    label: 405. Negara tempat dilahirkan
+    dtype: C
+    position: 43
+    category: migration
+  MIG_PROV:
+    label: 403. Provinsi tempat dilahirkan
+    dtype: C
+    position: 41
+    category: migration
+  MIG_REAS:
+    label: 411. Alasan utama pindah ke Indonesia
+    dtype: C
+    position: 50
+    category: migration
+  DIF_CARE:
+    label: 506. kesulitan perawatan diri seperti membersihkan badan/berpakaian
+    dtype: C
+    position: 58
+    category: disability
+  DIF_COMM:
+    label: 507. kesulitan berkomunikasi
+    dtype: C
+    position: 59
+    category: disability
+  DIF_CONC:
+    label: 505. kesulitan mengingat atau berkonsentrasi?
+    dtype: C
+    position: 57
+    category: disability
+  DIF_EMOSI:
+    label: 508. kesulitan gangguan perilaku/emosional
+    dtype: C
+    position: 60
+    category: disability
+  DIF_HAND:
+    label: 504. kesulitan/gangguan menggunakan/menggerakkan tangan/jari?
+    dtype: C
+    position: 56
+    category: disability
+  DIF_HEAR:
+    label: 502. kesulitan mendengar meskipun menggunakan alat bantu dengar?
+    dtype: C
+    position: 54
+    category: disability
+    value_labels:
+      1: Tidak kesulitan
+      2: Sedikit kesulitan
+      3: Banyak kesulitan
+      4: Tidak bisa sama sekali
+  DIF_MOBI:
+    label: 503. kesulitan berjalan atau menaiki tangga?
+    dtype: C
+    position: 55
+    category: disability
+    value_labels:
+      1: Tidak kesulitan
+      2: Sedikit kesulitan
+      3: Banyak kesulitan
+      4: Tidak bisa sama sekali
+  DIF_SIGHT:
+    label: 501. kesulitan melihat meskipun memakai kacamata?
+    dtype: C
+    position: 53
+    category: disability
+    value_labels:
+      1: Tidak kesulitan
+      2: Sedikit kesulitan
+      3: Banyak kesulitan
+      4: Tidak bisa sama sekali
+  TIK_A:
+    label: 602a. menggunakan komputer dalam 3 bulan terakhir
+    dtype: C
+    position: 62
+    category: ict_usage
+  TIK_B:
+    label: 602b. menggunakan telepon pintar dalam 3 bulan terakhir
+    dtype: C
+    position: 63
+    category: ict_usage
+  TIK_C:
+    label: 602c. menggunakan teknologi digital lain dalam 3 bulan terakhir
+    dtype: C
+    position: 64
+    category: ict_usage
+  TIK_D:
+    label: 602d. menggunakan internet dalam 3 bulan terakhir
+    dtype: C
+    position: 65
+    category: ict_usage
+  TIK_E:
+    label: 602e. tidak menggunakan teknologi digital 3 bulan terakhir
+    dtype: C
+    position: 66
+    category: ict_usage
+  TIK_HP:
+    label: 601. memiliki/ menguasai telepon selular/telepon pintar (HP/smartphone)
+    dtype: C
+    position: 61
+    category: ict_usage
+    response_type: yes_no
+  TIK_INET_A:
+    label: 603a. internet untuk komunikasi dalam 3 bulan terakhir
+    dtype: C
+    position: 67
+    category: ict_usage
+  TIK_INET_B:
+    label: 603b. internet untuk akses informasi dalam 3 bulan terakhir
+    dtype: C
+    position: 68
+    category: ict_usage
+  TIK_INET_C:
+    label: 603c. internet untuk penjualan barang jasa dalam 3 bulan terakhir
+    dtype: C
+    position: 69
+    category: ict_usage
+  TIK_INET_D:
+    label: 603d. internet untuk pembelian barang jasa dalam 3 bulan terakhir
+    dtype: C
+    position: 70
+    category: ict_usage
+  TIK_INET_E:
+    label: 603e. internet untuk internet banking dalam 3 bulan terakhir
+    dtype: C
+    position: 71
+    category: ict_usage
+  TIK_INET_F:
+    label: 603f. internet untuk lainnya dalam 3 bulan terakhir
+    dtype: C
+    position: 72
+    category: ict_usage
+  ATW_FAM:
+    label: 703. membantu kegiatan usaha/pekerjaan keluarga/kerabat lainnya yang dilakukan paling sedikit satu jam di seminggu
+      terakhir
+    dtype: C
+    position: 75
+    category: work_status
+    response_type: yes_no
+  ATW_PAY:
+    label: 701. bekerja untuk memperoleh bayaran/upah/gaji yang dilakukan paling sedikit satu jam di seminggu terakhir
+    dtype: C
+    position: 73
+    category: work_status
+    response_type: yes_no
+  ATW_PFT:
+    label: 702. menjalankan usaha/bertani//kegiatan lainnya untuk memperoleh keuntungan/pendapatan dilakukan sedikitnya satu
+      jam di seminggu terakhir
+    dtype: C
+    position: 74
+    category: work_status
+    response_type: yes_no
+  ABS_DUR:
+    label: 804. akan kembali ke pekerjaan/usaha yang sama dalam waktu 3 bulan/kurang terhitung sejak sementara tidak bekerja
+    dtype: C
+    position: 79
+    category: absent_work
+  ABS_JOB:
+    label: 801. sebenarnya memiliki pekerjaan/kegiatan usaha, tapi seminggu terakhir tidak bekerja/tidak menjalankan usaha
+      tersebut
+    dtype: C
+    position: 76
+    category: absent_work
+    response_type: yes_no
+  ABS_PAY:
+    label: 805. tetap memperoleh bayaran selama periode sementara tidak bekerja
+    dtype: C
+    position: 80
+    category: absent_work
+  ABS_SEA:
+    label: 803. tetap melakukan pekerjaan/kegiatan usaha walau musim sepi
+    dtype: C
+    position: 78
+    category: absent_work
+  ABS_WHY:
+    label: 802. alasan utama sementara tidak bekerja selama seminggu terakhir
+    dtype: C
+    position: 77
+    category: absent_work
+    value_labels:
+      1: Sakit
+      2: Cuti
+      3: Libur
+      4: Mogok kerja
+      5: Sekolah/pelatihan
+      6: Musim sepi
+      7: Cuaca buruk
+      8: Alasan teknis
+      9: Lainnya
+  MJT_LAMA:
+    label: 1202. lama waktu untuk mencari pekerjaan/mempersiapkan usaha di pekerjaan ini, jika bekerja sejak Februari 2024
+    dtype: C
+    position: 162
+    category: main_job_time
+  MJT_SYR_M:
+    label: 1201m. bulan mulai bekerja di pekerjaan atau usaha ini
+    dtype: C
+    position: 160
+    category: main_job_time
+  MJT_SYR_Y:
+    label: 1201y. tahun mulai bekerja di pekerjaan atau usaha ini
+    dtype: C
+    position: 161
+    category: main_job_time
+  MJT_UPAH:
+    label: 1203. besar upah/gaji bersih pertama per bulan (baik berupa uang maupun barang)
+    dtype: N
+    position: 163
+    category: main_job_time
+  SJB_TEXT:
+    label: 1701. memilki pekerjaan/kegiatan usaha tambahan lain
+    dtype: C
+    position: 214
+    category: secondary_job
+  SJD_CONT_A:
+    label: 1805a. perantara menetepkan harga produk atau jasa yang ditawarkan
+    dtype: C
+    position: 254
+    category: secondary_job
+  SJD_CONT_B:
+    label: 1805b. perantara menetepkan di mana, kapan, atau bagaimana harus melakukan pekerjaan
+    dtype: C
+    position: 255
+    category: secondary_job
+  SJD_CONT_C:
+    label: 1805c. perantara menetepkan selain tersebut di atas
+    dtype: C
+    position: 256
+    category: secondary_job
+  SJD_REM_TA:
+    label: 1801a. upah gaji uang sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 233
+    category: secondary_job
+  SJD_REM_TB:
+    label: 1801b. per satuan hasil sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 234
+    category: secondary_job
+  SJD_REM_TC:
+    label: 1801c. komisi sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 235
+    category: secondary_job
+  SJD_REM_TD:
+    label: 1801d. tip sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 236
+    category: secondary_job
+  SJD_REM_TE:
+    label: 1801e. ongkos jasa sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 237
+    category: secondary_job
+  SJD_REM_TF:
+    label: 1801f. makanan/akomodasi sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 238
+    category: secondary_job
+  SJD_REM_TG:
+    label: 1801g. produk/barang sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 239
+    category: secondary_job
+  SJD_REM_TH:
+    label: 1801h. borongan sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 240
+    category: secondary_job
+  SJD_REM_TI:
+    label: 1801i. tunai lain sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 241
+    category: secondary_job
+  SJD_REM_TJ:
+    label: 1801j. tak dibayar sebagai pembayaran dari pekerjaan tambahan utama diterima sebulan terakhir
+    dtype: C
+    position: 242
+    category: secondary_job
+  SJD_SINGLE:
+    label: 1803. sebagian besar pendapatan usaha/kegiatan tersebut berasal dari
+    dtype: C
+    position: 252
+    category: secondary_job
+  SJD_SOC_A:
+    label: 1802a. tempat bekerja tambahan memberikan jaminan kesehatan
+    dtype: C
+    position: 243
+    category: secondary_job
+  SJD_SOC_B:
+    label: 1802b. tempat bekerja tambahan memberikan jaminan kecelakaan kerja
+    dtype: C
+    position: 244
+    category: secondary_job
+  SJD_SOC_C:
+    label: 1802c. tempat bekerja tambahan memberikan jaminan kematian
+    dtype: C
+    position: 245
+    category: secondary_job
+  SJD_SOC_D:
+    label: 1802d. tempat bekerja tambahan memberikan jaminan hari tua
+    dtype: C
+    position: 246
+    category: secondary_job
+  SJD_SOC_E:
+    label: 1802e. tempat bekerja tambahan memberikan jaminan pensiun
+    dtype: C
+    position: 247
+    category: secondary_job
+  SJD_SOC_F:
+    label: 1802f. tempat bekerja tambahan memberikan jaminan kehilangan pekerjaan
+    dtype: C
+    position: 248
+    category: secondary_job
+  SJD_SOC_G:
+    label: 1802g. tempat bekerja tambahan memberikan cuti tahunan tanpa memotong upah gaji pokok
+    dtype: C
+    position: 249
+    category: secondary_job
+  SJD_SOC_H:
+    label: 1802h. tempat bekerja tambahan memberikan cuti bersalin tanpa memotong upah gaji pokok
+    dtype: C
+    position: 250
+    category: secondary_job
+  SJD_SOC_I:
+    label: 1802i. tempat bekerja tambahan memberikan cuti sakit tanpa memotong upah gaji pokok
+    dtype: C
+    position: 251
+    category: secondary_job
+  SJD_SOURCE:
+    label: 1804. mendapatkan pelanggan/konsumen/pembeli melalui orang lain
+    dtype: C
+    position: 253
+    category: secondary_job
+  AGF_ANY_A:
+    label: 902a. melakukan kegiatan pertanian tanaman pangan apa pun di seminggu terakhir
+    dtype: C
+    position: 86
+    category: other
+  AGF_ANY_B:
+    label: 902b. melakukan kegiatan pertanian bukan tanaman pangan apa pun di seminggu terakhir
+    dtype: C
+    position: 87
+    category: other
+  AGF_ANY_C:
+    label: 902c. melakukan kegiatan pemeliharaan binatang ternak apa pun di seminggu terakhir
+    dtype: C
+    position: 88
+    category: other
+  AGF_ANY_D:
+    label: 902d. melakukan kegiatan perikanan apa pun di seminggu terakhir
+    dtype: C
+    position: 89
+    category: other
+  AGF_ANY_E:
+    label: 902e. melakukan kegiatan lain apa pun di seminggu terakhir
+    dtype: C
+    position: 90
+    category: other
+  AGF_CHK_A:
+    label: 901a. bidang pekerjaan pertanian tanaman pangan
+    dtype: C
+    position: 81
+    category: other
+  AGF_CHK_B:
+    label: 901b. bidang pekerjaan pertanian bukan tanaman pangan
+    dtype: C
+    position: 82
+    category: other
+  AGF_CHK_C:
+    label: 901c. bidang pekerjaan pemeliharaan binatang ternak
+    dtype: C
+    position: 83
+    category: other
+  AGF_CHK_D:
+    label: 901d. bidang pekerjaan perikanan
+    dtype: C
+    position: 84
+    category: other
+  AGF_CHK_E:
+    label: 901e. bidang pekerjaan selain di atas
+    dtype: C
+    position: 85
+    category: other
+  AGF_HIR:
+    label: 904. dipekerjakan oleh orang lain untuk melakukan pekerjaan/kegiatan
+    dtype: C
+    position: 92
+    category: other
+  AGF_MKT:
+    label: 903. penggunaan barang/produk yang dihasilkan dari pekerjaan di bidang tersebut
+    dtype: C
+    position: 91
+    category: other
+  MCD_ANK_KD:
+    label: 1311. pernah mengalami kondisi membahayakan kesehatan disebabkan pekerjaan selama 12 bulan terakhir
+    dtype: C
+    position: 175
+    category: other
+  MCD_ANK_KE:
+    label: 1313ke. pernah mengalami kekerasan emosional/psikis di tempat kerja
+    dtype: C
+    position: 178
+    category: other
+  MCD_ANK_KF:
+    label: 1313kf. pernah mengalami kekerasan fisik di tempat kerja
+    dtype: C
+    position: 177
+    category: other
+  MCD_ANK_KS:
+    label: 1313ks. pernah mengalami kekerasan seksual di tempat kerja
+    dtype: C
+    position: 179
+    category: other
+  MCD_ANK_LK:
+    label: 1312. bekerja dalam lingkungan yang tidak aman atau tidak sehat
+    dtype: C
+    position: 176
+    category: other
+  MCD_CH:
+    label: 1307. kontrak atau perjanjian kerja menyebutkan/menyepakati jumlah jam kerja
+    dtype: C
+    position: 170
+    category: other
+  MCD_CH_NUM:
+    label: 1308. jam kerja yang disepakati pada kontrak/perjanjian kerja
+    dtype: C
+    position: 171
+    category: other
+  MCD_CM_A:
+    label: 1309a. kontrak kerja menjamin jumlah jam atau jumlah kerja minimum
+    dtype: C
+    position: 172
+    category: other
+  MCD_CM_B:
+    label: 1309b. memiliki jumlah jam kerja atau pekerjaan minimum yang disepakati dengan pemberi kerja/perusahaan
+    dtype: C
+    position: 173
+    category: other
+  MCD_SP:
+    label: 1310. terdaftar sebagai anggota dalam serikat pekerja
+    dtype: C
+    position: 174
+    category: other
+  MCD_TASKSE:
+    label: 1306. pekerjaan bersifat musiman
+    dtype: C
+    position: 169
+    category: other
+  MIE_SELF_A:
+    label: 1402a. membayar sendiri jaminan kesehatan
+    dtype: C
+    position: 189
+    category: other
+  MIE_SELF_B:
+    label: 1402b. membayar sendiri jaminan kecelakaan kerja
+    dtype: C
+    position: 190
+    category: other
+  MIE_SELF_C:
+    label: 1402c. membayar sendiri jaminan kematian
+    dtype: C
+    position: 191
+    category: other
+  MIE_SELF_D:
+    label: 1402d. membayar sendiri jaminan hari tua
+    dtype: C
+    position: 192
+    category: other
+  MIE_SELF_E:
+    label: 1402e. membayar sendiri jaminan pensiun
+    dtype: C
+    position: 193
+    category: other
+  MIE_SELF_F:
+    label: 1402f. membayar sendiri jaminan kehilangan pekerjaan
+    dtype: C
+    position: 194
+    category: other
+  MIE_SOC_A:
+    label: 1401a. tempat bekerja memberikan jaminan kesehatan
+    dtype: C
+    position: 180
+    category: other
+  MIE_SOC_B:
+    label: 1401b. tempat bekerja memberikan jaminan kecelakaan kerja
+    dtype: C
+    position: 181
+    category: other
+  MIE_SOC_C:
+    label: 1401c. tempat bekerja memberikan jaminan kematian
+    dtype: C
+    position: 182
+    category: other
+  MIE_SOC_D:
+    label: 1401d. tempat bekerja memberikan jaminan hari tua
+    dtype: C
+    position: 183
+    category: other
+  MIE_SOC_E:
+    label: 1401e. tempat bekerja memberikan jaminan pensiun
+    dtype: C
+    position: 184
+    category: other
+  MIE_SOC_F:
+    label: 1401f. tempat bekerja memberikan jaminan kehilangan pekerjaan
+    dtype: C
+    position: 185
+    category: other
+  MIE_SOC_G:
+    label: 1401g. tempat bekerja memberikan cuti tahunan tanpa memotong upah gaji pokok
+    dtype: C
+    position: 186
+    category: other
+  MIE_SOC_H:
+    label: 1401h. tempat bekerja memberikan cuti bersalin tanpa memotong upah gaji pokok
+    dtype: C
+    position: 187
+    category: other
+  MIE_SOC_I:
+    label: 1401i. tempat bekerja memberikan cuti sakit tanpa memotong upah gaji pokok
+    dtype: C
+    position: 188
+    category: other
+  MIS_BOOK:
+    label: 1605. tempat bekerja melakukan pembukuan keuangan
+    dtype: C
+    position: 213
+    category: other
+  MJC_CONOP:
+    label: 1302. periode waktu kontrak atau perjanjian kerja
+    dtype: C
+    position: 165
+    category: other
+  MJC_CONTRA:
+    label: 1301. memiliki perjanjian/kontrak kerja
+    dtype: C
+    position: 164
+    category: other
+  MJC_DUR:
+    label: 1304. lama total kontrak atau perjanjian kerja
+    dtype: C
+    position: 167
+    category: other
+  MJC_PKJ:
+    label: 1305. memiliki lebih dari satu majikan/pemberi kerja di sebulan terakhir
+    dtype: C
+    position: 168
+    category: other
+  MJC_TOTAL:
+    label: 1303. perkiraan lama bekerja pada pekerjaan ini
+    dtype: C
+    position: 166
+    category: other
+  MJD_CONT_A:
+    label: 1504a. perusahaan/perantara/orang menetapkan harga produk atau jasa yang ditawarkan
+    dtype: C
+    position: 201
+    category: other
+  MJD_CONT_B:
+    label: 1504b. perusahaan/perantara/orang menentukan jumlah minimum penjualan atau tugas yang harus diselesaikan
+    dtype: C
+    position: 202
+    category: other
+  MJD_CONT_C:
+    label: 1504c. perusahaan/perantara/orang menentukan tempat, rute, atau area tempat dalam melakukan pekerjaan
+    dtype: C
+    position: 203
+    category: other
+  MJD_CONT_D:
+    label: 1504d. perusahaan/perantara/orang memutuskan bagaimana mengatur pekerjaan
+    dtype: C
+    position: 204
+    category: other
+  MJD_CONT_E:
+    label: 1504e. perusahaan/perantara/orang memutuskan pemasok yang akan digunakan
+    dtype: C
+    position: 205
+    category: other
+  MJD_CONT_F:
+    label: 1504f. perusahaan/perantara/orang menyediakan tempat atau mesin yang digunakan
+    dtype: C
+    position: 206
+    category: other
+  MJD_CONT_G:
+    label: 1504g. perusahaan/perantara/orang tidak menetapkan operasional
+    dtype: C
+    position: 207
+    category: other
+  MJD_SELL_A:
+    label: 1503a. membuat produk atau menyediakan layanan hanya untuk satu perusahaan
+    dtype: C
+    position: 197
+    category: other
+  MJD_SELL_B:
+    label: 1503b. menjual produk atau layanan hanya dari satu perusahaan
+    dtype: C
+    position: 198
+    category: other
+  MJD_SELL_C:
+    label: 1503c. bekerja dengan bahan atau peralatan yang disediakan hanya oleh satu perusahaan
+    dtype: C
+    position: 199
+    category: other
+  MJD_SELL_D:
+    label: 1503d. tidak melayani/dibantu dari 1 perusahaan
+    dtype: C
+    position: 200
+    category: other
+  MJD_SINGLE:
+    label: 1501. asal sebagian besar pendapatan usaha/kegiatan tersebut
+    dtype: C
+    position: 195
+    category: other
+  MJD_SOURCE:
+    label: 1502. mendapatkan pelanggan/konsumen/ pembeli melalui pihak lain
+    dtype: C
+    position: 196
+    category: other
+  MJJ_CFWCHK:
+    label: 1008. yang biasanya membuat keputusan tentang pengelolaan usaha keluarga/rumah tangga
+    dtype: C
+    position: 99
+    category: other
+  MJJ_CFWINC:
+    label: 1009. yang biasanya memutuskan bagaimana pendapatan yang diperoleh dari usaha ini akan digunakan
+    dtype: C
+    position: 100
+    category: other
+  MJJ_EMPREL:
+    label: 1005. status pekerjaan utama
+    dtype: C
+    position: 94
+    category: other
+    value_labels:
+      1: Berusaha sendiri
+      2: Berusaha dibantu buruh tidak tetap
+      3: Berusaha dibantu buruh tetap
+      4: Buruh/karyawan/pegawai
+      5: Pekerja bebas pertanian
+      6: Pekerja bebas non-pertanian
+      7: Pekerja keluarga/tidak dibayar
+  MJJ_HIRESA:
+    label: 1010a. mempekerjakan buruh/karyawan/ pegawai yang dibayar secara rutin
+    dtype: C
+    position: 101
+    category: other
+  MJJ_HIRESB:
+    label: 1010b. usaha keluarga mempekerjakan buruh/ karyawan/pegawai yang dibayar secara rutin
+    dtype: C
+    position: 102
+    category: other
+  MJJ_INET_A:
+    label: 1019a. internet untuk komunikasi di pekerjaan utama
+    dtype: C
+    position: 125
+    category: other
+  MJJ_INET_B:
+    label: 1019b. internet untuk promosi di pekerjaan utama
+    dtype: C
+    position: 126
+    category: other
+  MJJ_INET_C:
+    label: 1019c. internet untuk akses informasi di pekerjaan utama
+    dtype: C
+    position: 127
+    category: other
+  MJJ_INET_D:
+    label: 1019d. internet untuk jual barang jasa di medsos pada pekerjaan utama
+    dtype: C
+    position: 128
+    category: other
+  MJJ_INET_E:
+    label: 1019e. internet untuk jual barang jasa di marketplace pada pekerjaan utama
+    dtype: C
+    position: 129
+    category: other
+  MJJ_INET_F:
+    label: 1019f. internet untuk beli barang jasa di medsos pada pekerjaan utama
+    dtype: C
+    position: 130
+    category: other
+  MJJ_INET_G:
+    label: 1019g. internet untuk beli barang jasa di marketplace pada pekerjaan utama
+    dtype: C
+    position: 131
+    category: other
+  MJJ_INET_H:
+    label: 1019h. internet untuk internet banking di marketplace pada pekerjaan utama
+    dtype: C
+    position: 132
+    category: other
+  MJJ_INET_I:
+    label: 1019i. internet lainnya pada pekerjaan utama
+    dtype: C
+    position: 133
+    category: other
+  MJJ_JMLBRH:
+    label: 1011. jumlah buruh/karyawan/pegawai tetap yang dibayar
+    dtype: C
+    position: 103
+    category: other
+  MJJ_JPTT:
+    label: 1013. jumlah pekerja tidak tetap yang dibayar
+    dtype: C
+    position: 105
+    category: other
+  MJJ_KATEGO:
+    label: 1006. Lapangan Usaha 17 Kategori KBLI 2020
+    dtype: C
+    position: 95
+    category: other
+  MJJ_KATE_A:
+    label: 1006. Lapangan Usaha 17 Kategori KBLI 2015
+    dtype: C
+    position: 96
+    category: other
+  MJJ_KBJI19:
+    label: 1007. Jenis pekerjaan KJI 1982 (1 digit)
+    dtype: C
+    position: 98
+    category: other
+  MJJ_KBJI20:
+    label: 1007. Jenis pekerjaan KBJI 2014 (1 digit)
+    dtype: C
+    position: 97
+    category: other
+  MJJ_LABA_B:
+    label: 1017b. laba barang diperoleh selama sebulan terakhir dari kegiatan usaha utama ini
+    dtype: C
+    position: 120
+    category: other
+  MJJ_LABA_U:
+    label: 1017u. laba uang diperoleh selama sebulan terakhir dari kegiatan usaha utama ini
+    dtype: C
+    position: 119
+    category: other
+  MJJ_MULT:
+    label: 1001. biasanya memiliki lebih dari satu pekerjaan/usaha
+    dtype: C
+    position: 93
+    category: other
+  MJJ_PTT:
+    label: 1012. usaha ini mempekerjakan pekerja tidak tetap / pekerja keluarga
+    dtype: C
+    position: 104
+    category: other
+  MJJ_P_UPH:
+    label: 1015. periode pembayaran/pengupahan biasanya pada pekerjaan utama
+    dtype: C
+    position: 116
+    category: other
+  MJJ_REM_TA:
+    label: 1014a. bentuk upah gaji sebagai pembayaran dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 106
+    category: other
+  MJJ_REM_TB:
+    label: 1014b. bentuk pembayaran per satuan hasil sebagai pembayaran dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 107
+    category: other
+  MJJ_REM_TC:
+    label: 1014c. bentuk komisi sebagai pembayaran dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 108
+    category: other
+  MJJ_REM_TD:
+    label: 1014d. bentuk tip sebagai pembayaran dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 109
+    category: other
+  MJJ_REM_TE:
+    label: 1014e. bentuk ongkos jasa sebagai pembayaran dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 110
+    category: other
+  MJJ_REM_TF:
+    label: 1014f. bentuk makanan/akomodasi sebagai pembayaran dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 111
+    category: other
+  MJJ_REM_TG:
+    label: 1014g. bentuk produk/barang sebagai pembayaran dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 112
+    category: other
+  MJJ_REM_TH:
+    label: 1014h. bentuk borongan sebagai pembayaran dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 113
+    category: other
+  MJJ_REM_TI:
+    label: 1014i. bentuk tunai lain sebagai pembayaran dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 114
+    category: other
+  MJJ_REM_TJ:
+    label: 1014j. tidak dibayar dari pekerjaan utama dalam sebulan terakhir
+    dtype: C
+    position: 115
+    category: other
+  MJJ_TI_A:
+    label: 1018a. memanfaatkan komputer pada pekerjaan utama
+    dtype: C
+    position: 121
+    category: other
+  MJJ_TI_B:
+    label: 1018b. memanfaatkan telepon seluler/ telepon pintar pada pekerjaan utama
+    dtype: C
+    position: 122
+    category: other
+  MJJ_TI_C:
+    label: 1018c. memanfaatkan teknologi digital lain pada pekerjaan utama
+    dtype: C
+    position: 123
+    category: other
+  MJJ_TI_D:
+    label: 1018d. memanfaatkan internet pada pekerjaan utama
+    dtype: C
+    position: 124
+    category: other
+  MJJ_UPAH_B:
+    label: 1016b. gaji/upah barang bersih diterima dari pekerjaan utama selama sebulan terakhir
+    dtype: N
+    position: 118
+    category: other
+  MJJ_UPAH_U:
+    label: 1016u. gaji/upah uang bersih diterima dari pekerjaan utama selama sebulan terakhir
+    dtype: N
+    position: 117
+    category: other
+  MJL_CORP:
+    label: 1602. usaha berbadan hukum
+    dtype: C
+    position: 209
+    category: other
+  MJL_REGI:
+    label: 1601. usaha/perusahaan terdaftar di sistem perizinan
+    dtype: C
+    position: 208
+    category: other
+  MJL_REGP:
+    label: 1604. terdaftar sebagai wajib pajak
+    dtype: C
+    position: 212
+    category: other
+  MJL_WKT_M:
+    label: 1603m. bulan terdaftar pada sistem perizinan
+    dtype: C
+    position: 210
+    category: other
+  MJL_WKT_Y:
+    label: 1603y. tahun terdaftar pada sistem perizinan
+    dtype: C
+    position: 211
+    category: other
+  MJU_INS_VA:
+    label: 1101. jenis instansi/lembaga/institusi dari tempat kerja/usaha
+    dtype: C
+    position: 144
+    category: other
+  MJU_KAB:
+    label: 1107. kabupaten/kota tempat bekerja
+    dtype: C
+    position: 150
+    category: other
+  MJU_KOMU:
+    label: 1104. melakukan pergi dan pulang dari rumah/tempat tinggal ke kantor/tempat kerja
+    dtype: C
+    position: 147
+    category: other
+  MJU_LOKASI:
+    label: 1105. tempat bekerja pada pekerjaan utama dalam seminggu terakhir
+    dtype: C
+    position: 148
+    category: other
+  MJU_MODA_A:
+    label: 1109a. mobil pribadi/dinas/bus karyawan
+    dtype: C
+    position: 152
+    category: other
+  MJU_MODA_B:
+    label: 1109b. sepeda motor pribadi/dinas
+    dtype: C
+    position: 153
+    category: other
+  MJU_MODA_C:
+    label: 1109c. kendaraan pribadi lainnya
+    dtype: C
+    position: 154
+    category: other
+  MJU_MODA_D:
+    label: 1109d. transportasi umum
+    dtype: C
+    position: 155
+    category: other
+  MJU_MODA_E:
+    label: 1109e. transportasi online
+    dtype: C
+    position: 156
+    category: other
+  MJU_MODA_F:
+    label: 1109f. transportasi lain
+    dtype: C
+    position: 157
+    category: other
+  MJU_MODA_G:
+    label: 1109g. berjalan kaki/tidak menggunakan alat transportasi
+    dtype: C
+    position: 158
+    category: other
+  MJU_MODA_U:
+    label: 1110. moda transportasi utama untuk beerangkat ke tempat kerja
+    dtype: C
+    position: 159
+    category: other
+  MJU_NEG:
+    label: 1108. negara tempat bekerja
+    dtype: C
+    position: 151
+    category: other
+  MJU_PLC:
+    label: 1103. tempat biasanya bekerja
+    dtype: C
+    position: 146
+    category: other
+  MJU_PROV:
+    label: 1106. provinsi tempat bekerja
+    dtype: C
+    position: 149
+    category: other
+  MJU_SIZ:
+    label: 1102. total orang bekerja di tempat kerja, termasuk pengusaha dan responden
+    dtype: C
+    position: 145
+    category: other
+  SJJ_EMPREL:
+    label: 1705. status pekerjaan tambahan
+    dtype: C
+    position: 215
+    category: other
+  SJJ_HIRES:
+    label: 1708. mempekerjakan buruh/karyawan/pegawai berbayar secara rutin pada usaha tambahan utama?
+    dtype: C
+    position: 220
+    category: other
+  SJJ_KATEGO:
+    label: 1706. KBLI 2020 pekerjaan tambahan
+    dtype: C
+    position: 216
+    category: other
+  SJJ_KATE_A:
+    label: 1706. KBLI 2015 pekerjaan tambahan
+    dtype: C
+    position: 217
+    category: other
+  SJJ_KBJI19:
+    label: 1707. KJI 1982 pekerjaan tambahan
+    dtype: C
+    position: 219
+    category: other
+  SJJ_KBJI20:
+    label: 1707. KBJI 2014 pekerjaan tambahan
+    dtype: C
+    position: 218
+    category: other
+  SJJ_PTT:
+    label: 1709. mempekerjakan pekerja tidak tetap/keluarga pada usaha tambahan utama
+    dtype: C
+    position: 221
+    category: other
+  SJJ_REGI:
+    label: 1710. usaha tambahan utama ini terdaftar di sistem perizinan
+    dtype: C
+    position: 222
+    category: other
+  WKT_BLT_T:
+    label: 1711. (Pembulatan) jumlah jam kerja tambahan utama
+    dtype: C
+    position: 231
+    category: other
+  WKT_BLT_U:
+    label: 1020. (Pembulatan) jumlah jam kerja seminggu pekerjaan utama
+    dtype: C
+    position: 142
+    category: other
+  WKT_JML_T:
+    label: 1711. jumlah jam kerja tambahan utama
+    dtype: C
+    position: 230
+    category: other
+  WKT_JML_U:
+    label: 1020. Jumlah jam kerja utama
+    dtype: C
+    position: 141
+    category: other
+  WKT_JUM_T:
+    label: 1711. jumat jam kerja tambahan utama
+    dtype: C
+    position: 227
+    category: other
+  WKT_JUM_U:
+    label: 1020. Jumat jam kerja utama
+    dtype: C
+    position: 138
+    category: other
+  WKT_KAM_T:
+    label: 1711. kamis jam kerja tambahan utama
+    dtype: C
+    position: 226
+    category: other
+  WKT_KAM_U:
+    label: 1020. Kamis jam kerja utama
+    dtype: C
+    position: 137
+    category: other
+  WKT_MJJ:
+    label: 1021. Jumlah jam kerja biasanya dalam seminggu di pekerjaan/usaha utama ini
+    dtype: C
+    position: 143
+    category: other
+  WKT_MNG_T:
+    label: 1711. minggu jam kerja tambahan utama
+    dtype: C
+    position: 229
+    category: other
+  WKT_MNG_U:
+    label: 1020. Minggu jam kerja utama
+    dtype: C
+    position: 140
+    category: other
+  WKT_RAB_T:
+    label: 1711. rabu jam kerja tambahan utama
+    dtype: C
+    position: 225
+    category: other
+  WKT_RAB_U:
+    label: 1020. Rabu jam kerja utama
+    dtype: C
+    position: 136
+    category: other
+  WKT_SAB_T:
+    label: 1711. sabtu jam kerja tambahan utama
+    dtype: C
+    position: 228
+    category: other
+  WKT_SAB_U:
+    label: 1020. Sabtu jam kerja utama
+    dtype: C
+    position: 139
+    category: other
+  WKT_SEL_T:
+    label: 1711. selasa jam kerja tambahan utama
+    dtype: C
+    position: 224
+    category: other
+  WKT_SEL_U:
+    label: 1020. Selasa jam kerja utama
+    dtype: C
+    position: 135
+    category: other
+  WKT_SEN_T:
+    label: 1711. senin jam kerja tambahan utama
+    dtype: C
+    position: 223
+    category: other
+  WKT_SEN_U:
+    label: 1020. Senin jam kerja utama
+    dtype: C
+    position: 134
+    category: other
+  WKT_SJJ:
+    label: 1712. jumlah biasanya jam kerja tambahan utama
+    dtype: C
+    position: 232
+    category: other
+conventions:
+  yes_no_fields:
+    description: 'Fields marked with response_type: yes_no use standard coding'
+    values:
+      1: Ya
+      2: Tidak
+  canon_name:
+    description: Only specified when field name differs from canonical name
+    example: 'B4K4 -> canon_name: dem_sex'

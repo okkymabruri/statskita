@@ -76,7 +76,7 @@ def test_survey_design_creation():
     })
 
     # create design
-    design = SurveyDesign(df, weight="weight", strata="strata", psu="psu")
+    design = SurveyDesign(df, weight_col="weight", strata_col="strata", psu_col="psu")
     assert design is not None
     assert design.weight_col == "weight"
     assert design.strata_col == "strata"
@@ -124,16 +124,17 @@ def test_indicator_calculation_dummy():
     })
 
     # create design
-    design = SurveyDesign(df, weight="weight")
+    design = SurveyDesign(df, weight_col="weight")
 
     # calculate basic indicator
-    calc = IndicatorCalculator()
-    result = calc.calculate_single(design, "employment_rate")
+    calc = IndicatorCalculator(design)
+    result = calc.calculate_employment_rate()
 
     assert result is not None
-    assert hasattr(result, "estimate")
-    assert result.estimate.value >= 0
-    assert result.estimate.value <= 100
+    assert "overall" in result
+    assert hasattr(result["overall"], "estimate")
+    assert result["overall"].estimate.value >= 0
+    assert result["overall"].estimate.value <= 100
 
 
 def test_export_functions_exist():

@@ -98,6 +98,7 @@ indent-style = "space"
 
 [dependency-groups]
 dev = [
+    "pytest>=8.4.2",
     "ruff>=0.13.2",
     "twine>=6.2.0",
 ]

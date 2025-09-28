@@ -5,7 +5,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-import dbf
 import polars as pl
 import pyreadstat
 import yaml
@@ -126,55 +125,24 @@ class SakernasLoader(BaseLoader):
             df = pl.from_pandas(df_pd)
 
         elif path.suffix.lower() == ".dbf":
-            # optimized dbf loading with rust-based reader
+            # dbf loading with rust-based reader
+            import dbfrs
             import pandas as pd
 
-            df = None
+            # get field names
+            fields = dbfrs.get_dbf_fields(str(path))
+            field_names = [field.name for field in fields]
 
-            # primary: dbfrs (rust-based, 3x faster)
-            try:
-                import dbfrs
+            # load records (returns tuples)
+            records = dbfrs.load_dbf(str(path))
 
-                # get field names
-                fields = dbfrs.get_dbf_fields(str(path))
-                field_names = [field.name for field in fields]
-
-                # load records (returns tuples)
-                records = dbfrs.load_dbf(str(path))
-
-                # convert via pandas (efficient for large datasets)
-                df_pd = pd.DataFrame(records, columns=field_names)
-                df = pl.from_pandas(df_pd)
-
-            except (ImportError, Exception):
-                # fallback: ethanfurman/dbf (compatible)
-                table = dbf.Table(str(path))
-                table.open(mode=dbf.READ_ONLY)
-
-                try:
-                    records = []
-                    for record in table:
-                        row_dict = {}
-                        for field in table.field_names:
-                            value = record[field]
-                            if value is None or (isinstance(value, str) and value.strip() == ""):
-                                row_dict[field] = None
-                            else:
-                                row_dict[field] = value
-                        records.append(row_dict)
-
-                finally:
-                    table.close()
-
-                if records:
-                    df_pd = pd.DataFrame(records)
-                    df = pl.from_pandas(df_pd)
-                else:
-                    df = pl.DataFrame()
+            # convert via pandas (efficient for large datasets)
+            df_pd = pd.DataFrame(records, columns=field_names)
+            df = pl.from_pandas(df_pd)
 
             # dbf has no metadata, create empty dicts
             self._value_labels = {}
-            self._variable_labels = {col: col for col in df.columns if df is not None}
+            self._variable_labels = {col: col for col in df.columns}
 
         else:
             raise ValueError(f"Unsupported file format: {path.suffix}")

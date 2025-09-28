@@ -1,4 +1,5 @@
 # Release commands for StatsKita
+# Updates version in: pyproject.toml, statskita/__init__.py, CITATION.cff
 
 .PHONY: release-patch release-minor release-major release
 

@@ -1,12 +1,10 @@
-# StatsKita
+# StatsKita: Python toolkit for Indonesian official microdata (SAKERNAS)
 
 > ⚠️ **v0.1.0 - Alpha Release**: This is an early release. The API may change in future versions. Use in production with caution.
 
-Python toolkit for Indonesian official microdata.
-
 ## TL;DR
 
-**Load → Clean → Analyze → Export** Indonesian official microdata (SAKERNAS, SUSENAS, PODES) with proper survey weights, 10x faster than manual workflows, validated against official BPS publications.
+**Load → Clean → Analyze → Export** Indonesian official microdata.
 
 ## Quick Start
 

@@ -289,9 +289,14 @@ class IndicatorCalculator:
         if len(df_employed) == 0:
             return {}
 
-        # underemployment indicator
+        # underemployment indicator - handle missing hours_worked
         df_employed = df_employed.with_columns(
-            [(pl.col("hours_worked") < hours_threshold).alias("underemployed_time")]
+            [
+                pl.when(pl.col("hours_worked").is_not_null())
+                .then(pl.col("hours_worked") < hours_threshold)
+                .otherwise(False)
+                .alias("underemployed_time")
+            ]
         )
 
         # create survey design for employed
@@ -320,6 +325,176 @@ class IndicatorCalculator:
                     "hours_threshold": hours_threshold,
                     "sample_size": len(df_employed),
                     "denominator": "Employed persons",
+                },
+            )
+
+        return results
+
+    def calculate_inactivity_rate(
+        self,
+        by: Optional[List[str]] = None,
+        min_working_age: int = 15,
+        confidence_level: float = 0.95,
+    ) -> Dict[str, IndicatorResult]:
+        """Calculate Inactivity Rate (Tingkat Ketidakaktifan).
+
+        Inactivity Rate = 100 - Labor Force Participation Rate
+
+        Args:
+            by: Grouping variables
+            min_working_age: Minimum working age
+            confidence_level: Confidence level for intervals
+
+        Returns:
+            Dictionary of inactivity rate estimates
+        """
+        # Get LFPR results
+        lfpr_results = self.calculate_labor_force_participation_rate(
+            by=by, min_working_age=min_working_age, confidence_level=confidence_level
+        )
+
+        # Calculate inactivity rate as 100 - LFPR
+        results = {}
+        for domain, lfpr_result in lfpr_results.items():
+            # Create new estimate with inverted value
+            lfpr_estimate = lfpr_result.estimate
+            inactivity_estimate = SurveyEstimate(
+                value=100.0 - lfpr_estimate.value,
+                se=lfpr_estimate.se,  # Same standard error
+                ci_low=100.0 - lfpr_estimate.ci_high,  # Note: inverted
+                ci_high=100.0 - lfpr_estimate.ci_low,   # Note: inverted
+                df=lfpr_estimate.df,
+                deff=lfpr_estimate.deff if hasattr(lfpr_estimate, 'deff') else None,
+            )
+
+            results[domain] = IndicatorResult(
+                indicator_name="Inactivity Rate (Tingkat Ketidakaktifan)",
+                estimate=inactivity_estimate,
+                domain=domain if domain != "overall" else None,
+                metadata={
+                    "min_working_age": min_working_age,
+                    "denominator": "Working age population",
+                },
+            )
+
+        return results
+
+    def calculate_average_wage(
+        self,
+        by: Optional[List[str]] = None,
+        confidence_level: float = 0.95,
+    ) -> Dict[str, IndicatorResult]:
+        """Calculate Average Wage (Rata-Rata Upah).
+
+        Average of total wages (cash + goods) for employed persons with wages.
+
+        Args:
+            by: Grouping variables
+            confidence_level: Confidence level for intervals
+
+        Returns:
+            Dictionary of average wage estimates
+        """
+        # Filter to employed persons with wage data
+        if "total_wage" in self.data.columns:
+            wage_col = "total_wage"
+        elif "wage_cash" in self.data.columns:
+            wage_col = "wage_cash"
+        else:
+            return {}
+
+        df_employed_wage = self.data.filter(
+            pl.col("employed") & pl.col(wage_col).is_not_null() & (pl.col(wage_col) > 0)
+        )
+
+        if len(df_employed_wage) == 0:
+            return {}
+
+        # Create survey design for employed with wages
+        wage_design = SurveyDesign(
+            data=df_employed_wage,
+            weight_col=self.design.weight_col,
+            strata_col=self.design.strata_col,
+            psu_col=self.design.psu_col,
+            fpc=self.design.fpc,
+        )
+
+        # Calculate average wage
+        wage_estimates = wage_design.estimate_mean(
+            variable=wage_col, by=by, confidence_level=confidence_level
+        )
+
+        # Wrap results
+        results = {}
+        for domain, estimate in wage_estimates.items():
+            results[domain] = IndicatorResult(
+                indicator_name="Average Wage (Rata-Rata Upah)",
+                estimate=estimate,
+                domain=domain if domain != "overall" else None,
+                metadata={
+                    "sample_size": len(df_employed_wage),
+                    "denominator": "Employed persons with wages",
+                    "unit": "Rupiah per month",
+                },
+            )
+
+        return results
+
+    def calculate_informal_employment_rate(
+        self,
+        by: Optional[List[str]] = None,
+        confidence_level: float = 0.95,
+    ) -> Dict[str, IndicatorResult]:
+        """Calculate Informal Employment Rate.
+
+        Percentage of employed persons working in informal activities.
+        According to BPS: informal = employment status 1, 2, 5, 6, 7
+
+        Args:
+            by: Grouping variables
+            confidence_level: Confidence level for intervals
+
+        Returns:
+            Dictionary of informal employment rate estimates
+        """
+        # Check for informal employment indicator
+        if "informal_employment" not in self.data.columns:
+            return {}
+
+        # Filter to employed persons with non-null informal employment status
+        df_employed = self.data.filter(
+            pl.col("employed") & pl.col("informal_employment").is_not_null()
+        )
+
+        if len(df_employed) == 0:
+            return {}
+
+        # Create survey design for employed
+        employed_design = SurveyDesign(
+            data=df_employed,
+            weight_col=self.design.weight_col,
+            strata_col=self.design.strata_col,
+            psu_col=self.design.psu_col,
+            fpc=self.design.fpc,
+        )
+
+        # Calculate informal employment rate
+        informal_estimates = employed_design.estimate_proportion(
+            variable="informal_employment", by=by, confidence_level=confidence_level
+        )
+
+        # Wrap results
+        results = {}
+        for domain, estimate in informal_estimates.items():
+            est_pct = estimate.as_pct()
+            results[domain] = IndicatorResult(
+                indicator_name="Informal Employment Rate",
+                estimate=est_pct,
+                domain=domain if domain != "overall" else None,
+                metadata={
+                    "sample_size": len(df_employed),
+                    "denominator": "Employed persons",
+                    "definition": "Employment status 1, 2, 5, 6, 7 (BPS definition)",
                 },
             )
 
@@ -373,29 +548,35 @@ class IndicatorCalculator:
 
 def calculate_indicators(
     survey_design: SurveyDesign,
-    indicators: List[str],
+    indicators: Optional[List[str]] = None,
     by: Optional[List[str]] = None,
     confidence_level: float = 0.95,
+    as_table: bool = True,  # Default to table format
+    include_ci: bool = False,  # Include confidence intervals and std error
     **kwargs,
 ) -> Dict[str, Dict[str, IndicatorResult]]:
     """Calculate specified labor force indicators.
 
     Args:
         survey_design: Survey design object
-        indicators: List of indicators to calculate (English or Indonesian names)
+        indicators: List of indicators to calculate, or "all" for all indicators
         by: Grouping variables for domain estimation
-        confidence_level: Confidence level for intervals
+        confidence_level: Confidence level for intervals (default: 0.95)
+        as_table: If True, return results formatted as a DataFrame table (default: True)
+        include_ci: If True, include confidence intervals and standard errors (default: False)
         **kwargs: Additional arguments for specific indicators
 
     Returns:
-        Dictionary of indicator results by indicator and domain
+        Dictionary of indicator results by indicator and domain, or DataFrame if as_table=True
 
     Example:
         >>> import statskita as sk
         >>> df = sk.load_sakernas("data.sav")
         >>> design = sk.declare_survey(df, weight="WEIGHT")
-        >>> # English names
+        >>> # Calculate specific indicators
         >>> results = sk.calculate_indicators(design, ["lfpr", "unemployment_rate"])
+        >>> # Calculate all indicators as table
+        >>> results = sk.calculate_indicators(design, "all", as_table=True)
         >>> # Indonesian aliases (backward compatibility)
         >>> results = sk.calculate_indicators(design, ["tpak", "tpt"], by=["province_code"])
     """
@@ -409,6 +590,9 @@ def calculate_indicators(
         "employment_rate": calculator.calculate_employment_rate,
         "neet_rate": calculator.calculate_neet_rate,
         "underemployment_rate": calculator.calculate_underemployment_rate,
+        "inactivity_rate": calculator.calculate_inactivity_rate,
+        "average_wage": calculator.calculate_average_wage,
+        "informal_employment_rate": calculator.calculate_informal_employment_rate,
     }
 
     # Indonesian aliases for backward compatibility
@@ -419,15 +603,31 @@ def calculate_indicators(
         "tingkat_kerja": "employment_rate",
         "neet": "neet_rate",
         "setengah_menganggur": "underemployment_rate",
+        "tingkat_ketidakaktifan": "inactivity_rate",
+        "rata_rata_upah": "average_wage",
+        "tingkat_informal": "informal_employment_rate",
+        "kegiatan_informal": "informal_employment_rate",
         # common English variants
         "labour_force_participation_rate": "lfpr",
         "labour_force_rate": "lfpr",
         "labor_force_participation_rate": "lfpr",
         "unemployment": "unemployment_rate",
         "underemployment": "underemployment_rate",
+        "informal": "informal_employment_rate",
+        "wage": "average_wage",
+        "wages": "average_wage",
     }
 
-    for indicator in indicators:
+    # Handle indicators="all" or indicators=None
+    if indicators == "all" or indicators is None:
+        indicators_to_calc = list(indicator_methods.keys())
+    elif isinstance(indicators, str):
+        # Single indicator as string
+        indicators_to_calc = [indicators]
+    else:
+        indicators_to_calc = indicators
+
+    for indicator in indicators_to_calc:
         # resolve Indonesian aliases to English names
         english_name = indonesian_aliases.get(indicator, indicator)
 
@@ -444,7 +644,7 @@ def calculate_indicators(
                 confidence_level=confidence_level,
                 age_range=kwargs.get("age_range", (15, 24)),
             )
-        elif english_name in ["lfpr", "employment_rate"]:
+        elif english_name in ["lfpr", "employment_rate", "inactivity_rate"]:
             results[indicator] = method(
                 by=by,
                 confidence_level=confidence_level,
@@ -456,7 +656,114 @@ def calculate_indicators(
                 confidence_level=confidence_level,
                 hours_threshold=kwargs.get("hours_threshold", 35),
             )
-        else:  # unemployment_rate and others
+        else:  # unemployment_rate, average_wage, informal_employment_rate
             results[indicator] = method(by=by, confidence_level=confidence_level)
 
+    # Convert to table format if requested (default: True)
+    if as_table:
+        return format_indicators_as_table(results, include_ci=include_ci)
+
     return results
+
+
+def format_indicators_as_table(
+    results: Dict[str, Dict[str, IndicatorResult]], include_ci: bool = False
+) -> pl.DataFrame:
+    """Format indicator results as a DataFrame table.
+
+    Args:
+        results: Dictionary of indicator results
+        include_ci: Include confidence intervals and standard error columns
+
+    Returns:
+        DataFrame with columns: indicator, domain, estimate, and optionally std_error, ci_lower, ci_upper
+    """
+    rows = []
+    has_multiple_domains = False
+
+    # Check if we have domain-specific results (not just "overall")
+    for indicator_name, domains in results.items():
+        if len(domains) > 1 or (len(domains) == 1 and "overall" not in domains):
+            has_multiple_domains = True
+            break
+
+    for indicator_name, domains in results.items():
+        for domain, result in domains.items():
+            estimate = result.estimate
+
+            # Format estimate based on indicator type
+            # Average wage should show as full number, not scientific notation
+            if indicator_name in ["average_wage", "rata_rata_upah"]:
+                estimate_val = estimate.value  # Keep full precision for wages
+            else:
+                estimate_val = round(estimate.value, 2)  # Round percentages
+
+            row = {
+                "indicator": indicator_name,
+                "estimate": estimate_val,
+            }
+
+            # Only include domain column if we have multiple domains
+            if has_multiple_domains:
+                row["domain"] = domain if domain != "overall" else "Total"
+
+            if include_ci:
+                # Format CI/SE based on indicator type
+                if indicator_name in ["average_wage", "rata_rata_upah"]:
+                    row.update({
+                        "std_error": estimate.se,
+                        "ci_lower": estimate.ci_low,
+                        "ci_upper": estimate.ci_high,
+                    })
+                else:
+                    row.update({
+                        "std_error": round(estimate.se, 2),
+                        "ci_lower": round(estimate.ci_low, 2),
+                        "ci_upper": round(estimate.ci_high, 2),
+                    })
+            rows.append(row)
+
+    if not rows:
+        # Return empty DataFrame with correct schema
+        schema = {
+            "indicator": [],
+            "estimate": [],
+        }
+        if has_multiple_domains:
+            schema["domain"] = []
+        if include_ci:
+            schema.update({
+                "std_error": [],
+                "ci_lower": [],
+                "ci_upper": [],
+            })
+        return pl.DataFrame(schema)
+
+    df = pl.DataFrame(rows)
+
+    # Sort by indicator name for consistent output
+    sort_cols = ["indicator"]
+    if "domain" in df.columns:
+        sort_cols.append("domain")
+    df = df.sort(sort_cols)
+
+    # Add a print method as a convenience
+    def print_table():
+        print("\n" + "="*75)
+        print("Labor Force Indicators")
+        print("="*75)
+        for row in df.iter_rows(named=True):
+            ind = row["indicator"]
+            dom = row["domain"]
+            est = row["estimate"]
+            if include_ci and "std_error" in row:
+                se = row["std_error"]
+                print(f"{ind:25} {dom:15} {est:6.2f}% ± {se:4.2f}%")
+            else:
+                print(f"{ind:25} {dom:15} {est:6.2f}%")
+        print("="*75)
+
+    # Attach print method to DataFrame
+    df.print_table = print_table
+
+    return df

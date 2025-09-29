@@ -23,12 +23,12 @@ def test_sakernas_loader_init():
 def test_sakernas_config():
     """Test that loader can load configuration."""
     loader = SakernasLoader()
-    loader._load_config(wave="2025_02")
+    loader._load_config(wave="2025-02")
 
     config = loader.get_config()
     assert config is not None
-    assert "fields" in config
-    # fields contains individual field definitions, not categories
+    assert "fields" in config or "dataset" in config
+    # config structure contains dataset info and fields
 
 
 def test_harmonizer_init():

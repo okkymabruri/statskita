@@ -198,8 +198,8 @@ class SurveyDesign:
                 else:
                     domain_key = "_".join(str(v) for v in domain_values)
 
-                y_domain = group[variable].values
-                w_domain = group[self.weight_col].values
+                y_domain = group[variable].astype(float).values
+                w_domain = group[self.weight_col].astype(float).values
 
                 if len(y_domain) == 0:
                     continue
@@ -233,8 +233,9 @@ class SurveyDesign:
         if variable not in self.data.columns:
             raise ValueError(f"Variable '{variable}' not found in data")
 
-        y_var = self._pd_data[variable].values
-        weights = self._pd_data[self.weight_col].values
+        # Convert to float to handle Decimal types
+        y_var = self._pd_data[variable].astype(float).values
+        weights = self._pd_data[self.weight_col].astype(float).values
 
         estimator = TaylorEstimator(param=PopParam.mean)
 
@@ -280,8 +281,8 @@ class SurveyDesign:
                     else "_".join(str(v) for v in domain_values)
                 )
 
-                y_domain = group[variable].values
-                w_domain = group[self.weight_col].values
+                y_domain = group[variable].astype(float).values
+                w_domain = group[self.weight_col].astype(float).values
 
                 if len(y_domain) == 0:
                     continue
@@ -324,8 +325,8 @@ class SurveyDesign:
         if variable not in self.data.columns:
             raise ValueError(f"Variable '{variable}' not found in data")
 
-        # convert to binary if needed
-        y_var = self._pd_data[variable].astype(int).values
+        # convert to binary if needed, handling nulls
+        y_var = self._pd_data[variable].fillna(0).astype(int).values
         weights = self._pd_data[self.weight_col].values
 
         estimator = TaylorEstimator(param=PopParam.prop)
@@ -385,13 +386,60 @@ class SurveyDesign:
                 if len(y_domain) == 0:
                     continue
 
-                estimator.estimate(
-                    y=y_domain,
-                    samp_weight=w_domain,
-                    stratum=group[self.strata_col].values if self.strata_col else None,
-                    psu=group[self.psu_col].values if self.psu_col else None,
-                    remove_nan=True,
-                )
+                # Get strata and PSU values
+                strata_values = group[self.strata_col].values if self.strata_col else None
+                psu_values = group[self.psu_col].values if self.psu_col else None
+
+                # Handle singleton PSUs by collapsing strata
+                if strata_values is not None and psu_values is not None:
+                    import pandas as pd
+                    strata_psu_df = pd.DataFrame({'strata': strata_values, 'psu': psu_values})
+                    psu_counts = strata_psu_df.groupby('strata')['psu'].nunique()
+                    singleton_strata = psu_counts[psu_counts == 1].index
+
+                    if len(singleton_strata) > 0:
+                        # Collapse singleton strata - combine with nearest stratum
+                        strata_values_adj = strata_values.copy()
+                        all_strata = sorted(psu_counts.index)
+
+                        for s in singleton_strata:
+                            # Find the closest non-singleton stratum
+                            non_singleton = psu_counts[psu_counts > 1].index
+                            if len(non_singleton) > 0:
+                                # Find numerically closest stratum
+                                s_idx = all_strata.index(s)
+                                # Try next stratum first
+                                if s_idx + 1 < len(all_strata) and all_strata[s_idx + 1] in non_singleton:
+                                    replacement = all_strata[s_idx + 1]
+                                # Try previous stratum
+                                elif s_idx > 0 and all_strata[s_idx - 1] in non_singleton:
+                                    replacement = all_strata[s_idx - 1]
+                                # Use any non-singleton
+                                else:
+                                    replacement = non_singleton[0]
+                                strata_values_adj[strata_values == s] = replacement
+                        strata_values = strata_values_adj
+
+                try:
+                    estimator.estimate(
+                        y=y_domain,
+                        samp_weight=w_domain,
+                        stratum=strata_values,
+                        psu=psu_values,
+                        remove_nan=True,
+                    )
+                except Exception as e:
+                    # If still fails, try without stratification for this domain
+                    if "Only one PSU" in str(e):
+                        estimator.estimate(
+                            y=y_domain,
+                            samp_weight=w_domain,
+                            stratum=None,  # Ignore strata for problematic domains
+                            psu=psu_values,
+                            remove_nan=True,
+                        )
+                    else:
+                        raise
 
                 # handle dict return for binary variables
                 if isinstance(estimator.point_est, dict):
@@ -416,8 +464,21 @@ class SurveyDesign:
             return results
 
     def get_design_summary(self) -> Dict[str, Any]:
-        """Get summary of survey design."""
-        return {
+        """Get summary of survey design (deprecated, use summary() instead)."""
+        import warnings
+        warnings.warn("get_design_summary() is deprecated, use summary() instead", DeprecationWarning)
+        return self.summary()
+
+    def summary(self, stats: bool = False) -> Dict[str, Any]:
+        """Get summary of survey design.
+
+        Args:
+            stats: If True, include weight diagnostics (CV, Kish ESS, etc.)
+
+        Returns:
+            Dictionary with design summary statistics
+        """
+        basic = {
             "sample_size": len(self.data),
             "weight_col": self.weight_col,
             "strata_col": self.strata_col,
@@ -433,6 +494,50 @@ class SurveyDesign:
             "fpc": self.fpc,
             "domain_cols": self.domain_cols,
         }
+
+        if stats and self.weight_col:
+            import numpy as np
+            w = self.data[self.weight_col].to_numpy()
+            basic.update({
+                "cv_weights": float(np.std(w, ddof=0) / np.mean(w)),
+                "kish_ess": float(np.sum(w)**2 / np.sum(w**2)),
+                "median_weight": float(np.median(w)),
+            })
+
+        return basic
+
+    def __repr__(self) -> str:
+        """String representation of the survey design."""
+        s = self.summary()
+        return (f"SurveyDesign(n={s['sample_size']:,}, strata={s['n_strata']}, "
+                f"psu={s['n_psu']}, weight='{s['weight_col']}')")
+
+    def info(self, stats: bool = False) -> None:
+        """Print formatted summary of survey design.
+
+        Args:
+            stats: If True, include weight diagnostics
+        """
+        s = self.summary(stats=stats)
+
+        print("\n" + "="*60)
+        print("Survey Design Summary")
+        print("="*60)
+        print(f"Sample size:         {s['sample_size']:,}")
+        print(f"Weight column:       {s['weight_col']}")
+        print(f"Strata:              {s['n_strata']} (column: {s['strata_col']})")
+        print(f"PSUs:                {s['n_psu']} (column: {s['psu_col']})")
+        if s['ssu_col']:
+            print(f"SSUs:                {s['n_ssu']} (column: {s['ssu_col']})")
+        print(f"Weight range:        {s['weight_range'][0]:.1f} - {s['weight_range'][1]:.1f}")
+        print(f"FPC:                 {s['fpc']}")
+
+        if stats and 'cv_weights' in s:
+            print("\nWeight Diagnostics:")
+            print(f"  CV of weights:     {s['cv_weights']:.3f}")
+            print(f"  Kish ESS:          {s['kish_ess']:,.0f}")
+            print(f"  Median weight:     {s['median_weight']:.1f}")
+        print("="*60)
 
 
 def declare_survey(

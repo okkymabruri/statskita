@@ -8,6 +8,7 @@ from .core import calculate_indicators, declare_survey, svyset, wrangle
 from .exporters import export_excel, export_excel_multiple_sheets, export_parquet, export_stata
 from .loaders import load_sakernas
 from .utils import batch_convert_dbf_to_parquet, dbf_to_parquet
+from . import sakernas  # convenient metadata API
 
 
 # placeholder loaders - coming in v0.2.0
@@ -38,4 +39,5 @@ __all__ = [
     "export_parquet",
     "dbf_to_parquet",
     "batch_convert_dbf_to_parquet",
+    "sakernas",  # metadata API
 ]

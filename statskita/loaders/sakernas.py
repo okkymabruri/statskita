@@ -454,6 +454,8 @@ class SakernasLoader(BaseLoader):
             return
 
         fields = self._config["fields"]
+        codelists = self._config.get("codelists", {})
+        overrides = self._config.get("overrides", {})
 
         # group by category
         categories = {}
@@ -473,10 +475,95 @@ class SakernasLoader(BaseLoader):
                 label = var_info.get("label", "")
                 print(f"{var_name:15} {label}")
 
-                # print value labels if present
+                # get value labels from multiple sources
+                value_labels = None
+
+                # check direct values first
                 if "values" in var_info:
-                    for code, val_label in var_info["values"].items():
+                    value_labels = var_info["values"]
+
+                # check for codelist reference in field
+                elif "codelist" in var_info:
+                    codelist_name = var_info["codelist"]
+                    if codelist_name in codelists:
+                        value_labels = codelists[codelist_name]
+
+                # check overrides for codelist reference
+                elif var_name in overrides and "codelist" in overrides[var_name]:
+                    codelist_name = overrides[var_name]["codelist"]
+                    if codelist_name in codelists:
+                        value_labels = codelists[codelist_name]
+
+                # print value labels if found
+                if value_labels:
+                    for code, val_label in value_labels.items():
                         print(f"  {code}: {val_label}")
+
+    def filter_labels(self, pattern: str) -> None:
+        """Print variable labels matching a pattern.
+
+        Args:
+            pattern: Pattern to match (supports * wildcard).
+                    Examples: "DEM_*", "*_EMPREL", "MJ*"
+
+        Example:
+            >>> loader.filter_labels('DEM_*')
+            DEM_SEX      204. Jenis kelamin
+              1: Laki-laki
+              2: Perempuan
+            DEM_AGE      209. Umur (tahun)
+            DEM_EDL      210. Pendidikan tertinggi yang ditamatkan
+        """
+        if not self._config or "fields" not in self._config:
+            print("No configuration loaded")
+            return
+
+        import fnmatch
+
+        fields = self._config["fields"]
+        codelists = self._config.get("codelists", {})
+        overrides = self._config.get("overrides", {})
+
+        # find matching fields
+        matching_fields = []
+        for field_name, field_info in fields.items():
+            if fnmatch.fnmatch(field_name, pattern):
+                matching_fields.append((field_name, field_info))
+
+        if not matching_fields:
+            print(f"No fields matching pattern '{pattern}'")
+            return
+
+        # print matching fields
+        print(f"\nFields matching '{pattern}':")
+        print("-" * 60)
+        for var_name, var_info in sorted(matching_fields):
+            label = var_info.get("label", "")
+            print(f"{var_name:15} {label}")
+
+            # get value labels from multiple sources
+            value_labels = None
+
+            # check direct values first
+            if "values" in var_info:
+                value_labels = var_info["values"]
+
+            # check for codelist reference in field
+            elif "codelist" in var_info:
+                codelist_name = var_info["codelist"]
+                if codelist_name in codelists:
+                    value_labels = codelists[codelist_name]
+
+            # check overrides for codelist reference
+            elif var_name in overrides and "codelist" in overrides[var_name]:
+                codelist_name = overrides[var_name]["codelist"]
+                if codelist_name in codelists:
+                    value_labels = codelists[codelist_name]
+
+            # print value labels if found
+            if value_labels:
+                for code, val_label in value_labels.items():
+                    print(f"  {code}: {val_label}")
 
     def list_categories(self) -> List[str]:
         """List all available categories from the configuration.
@@ -557,6 +644,7 @@ class SakernasLoader(BaseLoader):
 def load_sakernas(
     file_path: Union[str, Path],
     preserve_labels: bool = True,
+    preserve_original_names: bool = False,
     wave: Optional[str] = None,
     **kwargs,
 ) -> pl.DataFrame:
@@ -565,6 +653,7 @@ def load_sakernas(
     Args:
         file_path: Path to .sav, .dta, .dbf, or .parquet file
         preserve_labels: If False, convert numeric codes to Indonesian text labels
+        preserve_original_names: If True, keep original BPS field names (UPPER_CASE)
         wave: Survey wave (e.g., '2025-02') for config selection
         **kwargs: Extra options for pyreadstat
 
@@ -572,6 +661,8 @@ def load_sakernas(
         >>> df = sk.load_sakernas("sakernas_2024.sav")
         >>> # Load with automatic wave detection and label conversion
         >>> df = sk.load_sakernas("sakernas_2025-02.parquet", preserve_labels=False)
+        >>> # Keep original BPS field names
+        >>> df = sk.load_sakernas("sak202502.dbf", preserve_original_names=True)
         >>> # Or specify wave explicitly for older files
         >>> df = sk.load_sakernas("sak202502.dbf", wave="2025-02", preserve_labels=False)
         >>> print(f"Loaded {len(df)} observations")
@@ -586,7 +677,7 @@ def load_sakernas(
     if not preserve_labels and actual_wave and actual_wave != "unknown":
         from ..core.harmonizer import SurveyHarmonizer
         harmonizer = SurveyHarmonizer(dataset_type="sakernas")
-        df, _ = harmonizer.harmonize(df, source_wave=actual_wave, preserve_labels=False)
+        df, _ = harmonizer.harmonize(df, source_wave=actual_wave, preserve_labels=False, preserve_original_names=preserve_original_names)
 
     # attach loader metadata to dataframe
     if hasattr(df, "_statskita_metadata"):

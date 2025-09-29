@@ -28,10 +28,11 @@ def test_loader_initialization():
     assert loader is not None
 
     # check config loading
-    loader._load_config(wave="2025_02")
+    loader._load_config(wave="2025-02")
     config = loader.get_config()
     assert config is not None
-    assert "fields" in config
+    assert "dataset" in config
+    assert config["dataset"] == "sakernas"
 
 
 def test_list_categories():
@@ -39,7 +40,7 @@ def test_list_categories():
     from statskita.loaders.sakernas import SakernasLoader
 
     loader = SakernasLoader()
-    loader._load_config(wave="2025_02")
+    loader._load_config(wave="2025-02")
 
     categories = loader.list_categories()
     assert isinstance(categories, list)
@@ -52,7 +53,7 @@ def test_describe_variable():
     from statskita.loaders.sakernas import SakernasLoader
 
     loader = SakernasLoader()
-    loader._load_config(wave="2025_02")
+    loader._load_config(wave="2025-02")
 
     # describe specific variable
     info = loader.describe("DEM_AGE")

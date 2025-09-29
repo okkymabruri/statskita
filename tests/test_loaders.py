@@ -20,17 +20,6 @@ def test_sakernas_loader_init():
     # loader itself doesn't have dataset_name, it's in the metadata after loading
 
 
-def test_sakernas_config():
-    """Test that loader can load configuration."""
-    loader = SakernasLoader()
-    loader._load_config(wave="2025-02")
-
-    config = loader.get_config()
-    assert config is not None
-    assert "fields" in config or "dataset" in config
-    # config structure contains dataset info and fields
-
-
 def test_harmonizer_init():
     """Test SurveyHarmonizer initialization."""
     harmonizer = SurveyHarmonizer("sakernas")

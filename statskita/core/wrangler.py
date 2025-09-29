@@ -40,8 +40,6 @@ class DataWrangler:
         # harmonize if needed
         if harmonize and source_wave:
             result_df, mapping_log = self.harmonizer.harmonize(result_df, source_wave)
-            # harmonizer creates labor force indicators after harmonization
-            result_df = self.harmonizer.create_labor_force_indicators(result_df)
 
         if fix_types:
             result_df = self._fix_data_types(result_df)
@@ -112,7 +110,6 @@ class DataWrangler:
         return result_df
 
     def _create_labor_indicators(self, df: pl.DataFrame, min_working_age: int = 15) -> pl.DataFrame:
-        # print(f"Creating labor indicators...")  # debug
         result_df = df.clone()
 
         # WAP
@@ -152,8 +149,10 @@ class DataWrangler:
                 # numeric codes
                 result_df = result_df.with_columns(
                     [
-                        (pl.col(work_status_col) == 1).alias("employed"),  # 1 = Bekerja
-                        (pl.col(work_status_col).is_in([3, 4, 5, 6])).alias("not_working"),  # 3-6 = not working
+                        (pl.col(work_status_col) == 1).alias("employed"),  # 1 = Working
+                        (pl.col(work_status_col) == 2).alias("unemployed"),  # 2 = Unemployed
+                        (pl.col(work_status_col).is_in([1, 2])).alias("in_labor_force"),  # 1-2 = in labor force
+                        (pl.col(work_status_col) == 3).alias("not_in_labor_force"),  # 3 = not in labor force
                     ]
                 )
         else:
@@ -162,16 +161,17 @@ class DataWrangler:
                 [pl.lit(False).alias("employed"), pl.lit(False).alias("not_working")]
             )
 
-        # LF
-        if "employed" in result_df.columns:
+        # LF and unemployed (only if not already created)
+
+        if "in_labor_force" not in result_df.columns and "employed" in result_df.columns:
             result_df = result_df.with_columns(
-                pl.col("employed").alias("in_labor_force")  # simplified
+                pl.col("employed").alias("in_labor_force")  # simplified fallback
             )
 
-        # unemployed
-        result_df = result_df.with_columns(
-            (~pl.col("employed") & pl.col("in_labor_force")).alias("unemployed")
-        )
+        if "unemployed" not in result_df.columns:
+            result_df = result_df.with_columns(
+                (~pl.col("employed") & pl.col("in_labor_force")).alias("unemployed")
+            )
 
         # underemployment
         hours_col = self._find_column(result_df, ["hours_worked", "B5R28"])

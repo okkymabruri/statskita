@@ -116,7 +116,6 @@ class SurveyHarmonizer:
                     "2024": "B1R5",
                     "2025": "B1R5",
                 },
-                # Value mappings will be handled by config files
                 description="Urban/Rural classification",
             ),
             "age": VariableMapping(
@@ -127,7 +126,6 @@ class SurveyHarmonizer:
                     "2023": "B4K5",
                     "2024": "B4K5",
                     "2024-08": "K10",  # August 2024
-                    "2025": "dem_age",
                     "2025-02": "DEM_AGE",
                 },
                 description="Age in completed years",
@@ -140,10 +138,8 @@ class SurveyHarmonizer:
                     "2023": "B4K4",
                     "2024": "B4K4",
                     "2024-08": "K4",  # August 2024
-                    "2025": "dem_sex",
                     "2025-02": "DEM_SEX",
                 },
-                # Value mappings will be handled by config files
                 description="Gender",
             ),
             "education_level": VariableMapping(
@@ -153,10 +149,8 @@ class SurveyHarmonizer:
                     "2022": "B4K8",
                     "2023": "B4K8",
                     "2024": "B4K8",
-                    "2025": "dem_sklh",
                     "2025-02": "DEM_SKLH",
                 },
-                # Value mappings will be handled by config files
                 description="Highest education level completed",
             ),
             "work_status": VariableMapping(
@@ -166,11 +160,10 @@ class SurveyHarmonizer:
                     "2022": "B5R1",
                     "2023": "B5R1",
                     "2024": "B5R1",
-                    "2024-08": "R11",  # August 2024
+                    # Note: 2024-08 doesn't have direct work_status, needs derivation from R10A and R11
                     "2025": "B5R1",
                     "2025-02": "JENISKEGIA",
                 },
-                # Value mappings will be handled by config files
                 description="Work status in reference week",
             ),
             "hours_worked": VariableMapping(
@@ -180,6 +173,7 @@ class SurveyHarmonizer:
                     "2022": "B5R28",
                     "2023": "B5R28",
                     "2024": "B5R28",
+                    "2024-08": "R19A_JML",  # August 2024 total hours
                     "2025": "B5R28",
                     "2025-02": "WKT_JML_U",
                 },
@@ -273,6 +267,21 @@ class SurveyHarmonizer:
         harmonized_df = df.clone()
         mapping_log = {}
 
+        # Derive work_status for August 2024 from R10A and R11
+        if source_wave == "2024-08" and "R10A" in df.columns and "R11" in df.columns:
+            import polars as pl
+            harmonized_df = harmonized_df.with_columns(
+                pl.when(pl.col("R10A") == 1)
+                .then(1)  # Working
+                .when((pl.col("R10A") == 2) & (pl.col("R11") == 1))
+                .then(2)  # Unemployed (not working but seeking work)
+                .when((pl.col("R10A") == 2) & (pl.col("R11") == 2))
+                .then(3)  # Not in labor force (not working, not seeking)
+                .otherwise(None)
+                .alias("work_status")
+            )
+            mapping_log["R10A+R11"] = "work_status"
+
         # create case-insensitive column lookup
         column_map = {col.lower(): col for col in df.columns}
 
@@ -293,7 +302,8 @@ class SurveyHarmonizer:
                 continue
 
             # rename variable (only if preserve_original_names is False)
-            if not preserve_original_names and actual_column != rule.standard_name:
+            # skip if target column already exists (e.g., special handling created it)
+            if not preserve_original_names and actual_column != rule.standard_name and rule.standard_name not in harmonized_df.columns:
                 harmonized_df = harmonized_df.rename({actual_column: rule.standard_name})
                 mapping_log[actual_column] = rule.standard_name
 
@@ -408,8 +418,9 @@ class SurveyHarmonizer:
                                     )
                                     mapping_log[f"{target_field}_labels"] = "applied_from_base"
 
-                except Exception as e:
-                    print(f"Warning: Could not apply all value labels: {e}")
+                except Exception:
+                    # silently skip value label errors - they're not critical
+                    pass
 
         return harmonized_df, mapping_log
 
@@ -499,69 +510,6 @@ class SurveyHarmonizer:
                     pl.lit(False).alias("unemployed")
                 )
 
-        # For 1994 data: main_activity (b4p4) is the primary indicator
-        elif "main_activity" in df.columns:
-            # b4p4 codes: 1=Working, 2=Looking for work, 3=School, 4=Other, 5=Housekeeping
-            # Check if we have numeric codes (before value mapping)
-            sample_val = df["main_activity"].drop_nulls().head(1)
-            if len(sample_val) > 0 and isinstance(sample_val[0], (int, float)):
-                # Numeric codes
-                result_df = result_df.with_columns([
-                    (pl.col("main_activity") == 1).alias("employed"),
-                    (pl.col("main_activity") == 2).alias("unemployed")
-                ])
-            else:
-                # After value mapping - need to handle string values
-                # This would need mapping in the YAML config
-                result_df = result_df.with_columns([
-                    (pl.col("main_activity") == "Working").alias("employed"),
-                    (pl.col("main_activity") == "Looking for work").alias("unemployed")
-                ])
-
-        # Fallback: Use worked_1hour (b4p5) if main_activity not available
-        elif "worked_1hour" in df.columns:
-            # b4p5: 1=worked at least 1 hour, 2=didn't work
-            sample_val = df["worked_1hour"].drop_nulls().head(1)
-            if len(sample_val) > 0 and isinstance(sample_val[0], str):
-                # String values: "Ya"/"Tidak"
-                result_df = result_df.with_columns(
-                    (pl.col("worked_1hour") == "Ya").alias("employed")
-                )
-                # For unemployment: also check those with work but temporarily absent
-                if "temp_not_working" in df.columns:
-                    result_df = result_df.with_columns(
-                        pl.when(pl.col("temp_not_working") == "Ya")
-                        .then(True)
-                        .otherwise(pl.col("employed"))
-                        .alias("employed")
-                    )
-
-                if "job_seeking" in df.columns:
-                    result_df = result_df.with_columns(
-                        ((~pl.col("employed")) & (pl.col("job_seeking") == "Ya")).alias("unemployed")
-                    )
-                else:
-                    result_df = result_df.with_columns(pl.lit(False).alias("unemployed"))
-            else:
-                # Integer values
-                result_df = result_df.with_columns(
-                    (pl.col("worked_1hour") == 1).alias("employed")
-                )
-                # Include temporarily not working
-                if "temp_not_working" in df.columns:
-                    result_df = result_df.with_columns(
-                        pl.when(pl.col("temp_not_working") == 1)
-                        .then(True)
-                        .otherwise(pl.col("employed"))
-                        .alias("employed")
-                    )
-
-                if "job_seeking" in df.columns:
-                    result_df = result_df.with_columns(
-                        ((~pl.col("employed")) & (pl.col("job_seeking") == 1)).alias("unemployed")
-                    )
-                else:
-                    result_df = result_df.with_columns(pl.lit(False).alias("unemployed"))
 
         # Calculate labor force if we have employment indicators
         if "employed" in result_df.columns and "unemployed" in result_df.columns:

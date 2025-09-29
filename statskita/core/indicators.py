@@ -190,7 +190,7 @@ class IndicatorCalculator:
         for domain, estimate in employment_estimates.items():
             est_pct = estimate.as_pct()
             results[domain] = IndicatorResult(
-                indicator_name="Employment Rate",
+                indicator_name="Employment Rate (Tingkat Kesempatan Kerja)",
                 estimate=est_pct,
                 domain=domain if domain != "overall" else None,
                 metadata={
@@ -224,6 +224,11 @@ class IndicatorCalculator:
         df_youth = self.data.filter((pl.col("age") >= min_age) & (pl.col("age") <= max_age))
 
         if len(df_youth) == 0:
+            return {}
+
+        # check if in_school column exists
+        if "in_school" not in df_youth.columns:
+            # if no education data, cannot calculate NEET properly
             return {}
 
         # NEET indicator: not employed and not in school
@@ -289,6 +294,11 @@ class IndicatorCalculator:
         if len(df_employed) == 0:
             return {}
 
+        # check if hours_worked column exists
+        if "hours_worked" not in df_employed.columns:
+            # cannot calculate underemployment without hours data
+            return {}
+
         # underemployment indicator - handle missing hours_worked
         df_employed = df_employed.with_columns(
             [
@@ -318,7 +328,7 @@ class IndicatorCalculator:
         for domain, estimate in underempl_estimates.items():
             est_pct = estimate.as_pct()
             results[domain] = IndicatorResult(
-                indicator_name="Time-related Underemployment Rate",
+                indicator_name="Underemployment Rate (Setengah Menganggur)",
                 estimate=est_pct,
                 domain=domain if domain != "overall" else None,
                 metadata={
@@ -488,7 +498,7 @@ class IndicatorCalculator:
         for domain, estimate in informal_estimates.items():
             est_pct = estimate.as_pct()
             results[domain] = IndicatorResult(
-                indicator_name="Informal Employment Rate",
+                indicator_name="Informal Employment Rate (Tingkat Kegiatan Informal)",
                 estimate=est_pct,
                 domain=domain if domain != "overall" else None,
                 metadata={
@@ -518,28 +528,41 @@ class IndicatorCalculator:
         """
         results = {}
 
-        # labor force participation rate
-        results["lfpr"] = self.calculate_labor_force_participation_rate(
+        # priority 1: core labor indicators
+        results["labor_force_participation_rate"] = self.calculate_labor_force_participation_rate(
             by=by, min_working_age=min_working_age, confidence_level=confidence_level
         )
 
-        # unemployment rate
         results["unemployment_rate"] = self.calculate_unemployment_rate(
             by=by, confidence_level=confidence_level
         )
 
-        # employment rate
         results["employment_rate"] = self.calculate_employment_rate(
             by=by, min_working_age=min_working_age, confidence_level=confidence_level
         )
 
-        # NEET rate (if education data available)
-        if "in_school" in self.data.columns:
-            results["neet"] = self.calculate_neet_rate(by=by, confidence_level=confidence_level)
+        # priority 2: supplementary indicators
+        results["inactivity_rate"] = self.calculate_inactivity_rate(
+            by=by, min_working_age=min_working_age, confidence_level=confidence_level
+        )
 
-        # underemployment rate (if hours data available)
+        # priority 3: conditional indicators (if data available)
+        if "in_school" in self.data.columns:
+            results["neet_rate"] = self.calculate_neet_rate(by=by, confidence_level=confidence_level)
+
         if "hours_worked" in self.data.columns:
-            results["underemployment"] = self.calculate_underemployment_rate(
+            results["underemployment_rate"] = self.calculate_underemployment_rate(
+                by=by, confidence_level=confidence_level
+            )
+
+        if "informal_employment" in self.data.columns:
+            results["informal_employment_rate"] = self.calculate_informal_employment_rate(
+                by=by, confidence_level=confidence_level
+            )
+
+        # priority 4: wage data (if available)
+        if "total_wage" in self.data.columns or "wage_cash" in self.data.columns:
+            results["average_wage"] = self.calculate_average_wage(
                 by=by, confidence_level=confidence_level
             )
 
@@ -585,7 +608,7 @@ def calculate_indicators(
 
     # Primary English indicator methods
     indicator_methods = {
-        "lfpr": calculator.calculate_labor_force_participation_rate,
+        "labor_force_participation_rate": calculator.calculate_labor_force_participation_rate,
         "unemployment_rate": calculator.calculate_unemployment_rate,
         "employment_rate": calculator.calculate_employment_rate,
         "neet_rate": calculator.calculate_neet_rate,
@@ -595,27 +618,40 @@ def calculate_indicators(
         "informal_employment_rate": calculator.calculate_informal_employment_rate,
     }
 
-    # Indonesian aliases for backward compatibility
-    # TODO: migrate examples to use English names by v0.3.0
-    indonesian_aliases = {
-        "tpak": "lfpr",  # TPAK -> Labour Force Participation Rate (TPAK)
-        "tpt": "unemployment_rate",  # TPT -> Unemployment Rate (TPT)
-        "tingkat_kerja": "employment_rate",
-        "neet": "neet_rate",
+    # Comprehensive aliases for convenience
+    aliases = {
+        # Short English aliases
+        "lfpr": "labor_force_participation_rate",  # common abbreviation
+        "ur": "unemployment_rate",
+        "er": "employment_rate",
+        "ier": "informal_employment_rate",
+        "uer": "underemployment_rate",
+        "ir": "inactivity_rate",
+
+        # Indonesian names (BPS official terminology)
+        "tpak": "labor_force_participation_rate",  # Tingkat Partisipasi Angkatan Kerja
+        "tpt": "unemployment_rate",  # Tingkat Pengangguran Terbuka
+        "tingkat_kerja": "employment_rate",  # Tingkat Kesempatan Kerja
+        "tingkat_kesempatan_kerja": "employment_rate",
         "setengah_menganggur": "underemployment_rate",
         "tingkat_ketidakaktifan": "inactivity_rate",
         "rata_rata_upah": "average_wage",
         "tingkat_informal": "informal_employment_rate",
         "kegiatan_informal": "informal_employment_rate",
-        # common English variants
-        "labour_force_participation_rate": "lfpr",
-        "labour_force_rate": "lfpr",
-        "labor_force_participation_rate": "lfpr",
+        "tingkat_kegiatan_informal": "informal_employment_rate",
+
+        # Common English variants
+        "labour_force_participation_rate": "labor_force_participation_rate",
+        "labour_force_rate": "labor_force_participation_rate",
         "unemployment": "unemployment_rate",
+        "employment": "employment_rate",
         "underemployment": "underemployment_rate",
         "informal": "informal_employment_rate",
+        "informal_employment": "informal_employment_rate",
         "wage": "average_wage",
         "wages": "average_wage",
+        "neet": "neet_rate",
+        "inactivity": "inactivity_rate",
     }
 
     # Handle indicators="all" or indicators=None
@@ -628,11 +664,11 @@ def calculate_indicators(
         indicators_to_calc = indicators
 
     for indicator in indicators_to_calc:
-        # resolve Indonesian aliases to English names
-        english_name = indonesian_aliases.get(indicator, indicator)
+        # resolve aliases to primary English names
+        english_name = aliases.get(indicator, indicator)
 
         if english_name not in indicator_methods:
-            available = list(indicator_methods.keys()) + list(indonesian_aliases.keys())
+            available = list(indicator_methods.keys()) + list(aliases.keys())
             raise ValueError(f"Unknown indicator: {indicator}. Available: {available}")
 
         method = indicator_methods[english_name]
@@ -644,7 +680,7 @@ def calculate_indicators(
                 confidence_level=confidence_level,
                 age_range=kwargs.get("age_range", (15, 24)),
             )
-        elif english_name in ["lfpr", "employment_rate", "inactivity_rate"]:
+        elif english_name in ["labor_force_participation_rate", "employment_rate", "inactivity_rate"]:
             results[indicator] = method(
                 by=by,
                 confidence_level=confidence_level,

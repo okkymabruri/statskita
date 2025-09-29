@@ -463,12 +463,6 @@ class SurveyDesign:
 
             return results
 
-    def get_design_summary(self) -> Dict[str, Any]:
-        """Get summary of survey design (deprecated, use summary() instead)."""
-        import warnings
-        warnings.warn("get_design_summary() is deprecated, use summary() instead", DeprecationWarning)
-        return self.summary()
-
     def summary(self, stats: bool = False) -> Dict[str, Any]:
         """Get summary of survey design.
 

@@ -1,6 +1,7 @@
 """Convenient API for SAKERNAS metadata access."""
 
 from typing import Optional
+
 from ..loaders.sakernas import SakernasLoader
 
 # Cache for loader instances to avoid reloading YAML files

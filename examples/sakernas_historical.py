@@ -1,17 +1,7 @@
 """
-SAKERNAS Analysis - Testing All StatsKita Features
-
-Tests all statskita functions with recent SAKERNAS data:
-- load_sakernas: Load from .parquet/.dta/.sav/.dbf
-- wrangle: Harmonize and clean data
-- declare_survey: Create survey design
-- calculate_indicators: Compute labor force indicators
-- export_*: Export to various formats (skip for now)
-
-Run `python dev/convert_sakernas_to_parquet.py` first to convert to .parquet
+SAKERNAS Analysis - Comparing August 2024 and February 2025
 """
 # %%
-# Setup
 import os
 from pathlib import Path
 
@@ -19,103 +9,98 @@ import polars as pl
 from dotenv import load_dotenv
 
 import statskita as sk
-from statskita.core.harmonizer import SurveyHarmonizer
 from statskita.loaders.sakernas import SakernasLoader
 
-# load environment variables
 load_dotenv()
-
-# data paths
-DATA_DIR = Path(os.environ.get("SAKERNAS_RAW_DIR", "."))
 PARQUET_DIR = Path(os.environ.get("SAKERNAS_PARQUET_DIR", "."))
 
 # %%
-# 1: Load SAKERNAS data
-print("Loading SAKERNAS Feb 2025...")
-df = sk.load_sakernas(PARQUET_DIR / "sakernas_2025-02.parquet")
-print(f"Loaded {len(df):,} observations")
-df
+# Load both waves
+df_feb = sk.load_sakernas(PARQUET_DIR / "sakernas_2025-02.parquet")
+df_aug = sk.load_sakernas(PARQUET_DIR / "sakernas_2024-08.parquet")
+
 # %%
-# 1b: Explore available fields
+# Explore available fields
+wave = "2025-02"  # change to "2024-08" to explore August fields
 loader = SakernasLoader()
-loader._load_config("2025-02")
-loader.print_categories()  # show available categories
+loader._load_config(wave)
+loader.print_categories()
 # %%
 loader.print_labels("demographics")
 # %%
-loader.filter_labels("DEM_B*")
+loader.filter_labels("DEM_*")
 # %%
-# 2: Wrangle and harmonize data
-print("\nHarmonizing data...")
+# Harmonize
+sak_feb = sk.wrangle(df_feb, harmonize=True, source_wave="2025-02")
+sak_aug = sk.wrangle(df_aug, harmonize=True, source_wave="2024-08")
 
-# Use automatic harmonization - harmonizer now reads from YAML configs
-sak_df = sk.wrangle(
-    df,
-    harmonize=True,
-    source_wave="2025-02",
-    fix_types=True,
-    validate_weights=True,
-    create_indicators=True,
+# %%
+# Create survey designs
+design_feb = sk.declare_survey(
+    sak_feb,
+    weight="WEIGHT",
+    strata="STRATA",
+    psu="PSU",
+    ssu="SSU"
 )
 
-sak_df
-# %%
-# 3: Declare survey design
-print("3: Declare survey design")
-design = sk.declare_survey(
-    sak_df,
-    weight="WEIGHT",         # harmonized weight column
-    strata="STRATA",         # stratification variable
-    psu="PSU",               # primary sampling unit
-    ssu="SSU"                # secondary sampling unit
+design_aug = sk.declare_survey(
+    sak_aug,
+    weight="WEIGHT",
+    strata=None,  # avoid singleton PSU issues
+    psu="PSU"
 )
-print(f"Created survey design with {len(design.data):,} observations")
-# %%
-# 4: Calculate labor force indicators
 
-# Option 1: Calculate all indicators and return as table (NEW!)
-results_table = sk.calculate_indicators(
-    design,
-    indicators="all",  # Calculate all available indicators
-    as_table=True      # Return as DataFrame table
+# %%
+# Calculate indicators
+results_feb = sk.calculate_indicators(design_feb, indicators="all", as_table=True)
+results_aug = sk.calculate_indicators(design_aug, indicators="all", as_table=True)
+
+# %%
+# Combine and compare
+results_feb = results_feb.with_columns(pl.lit("2025-02").alias("wave"))
+results_aug = results_aug.with_columns(pl.lit("2024-08").alias("wave"))
+
+combined = pl.concat([results_aug, results_feb])
+
+# Pivot to get waves as columns
+combined_pivot = combined.pivot(
+    values="estimate",
+    index="indicator",
+    on="wave",
+    aggregate_function="first"
+).sort("indicator")
+
+# Add change columns
+combined_pivot = combined_pivot.with_columns(
+    (pl.col("2025-02") - pl.col("2024-08")).alias("change"),
+    ((pl.col("2025-02") - pl.col("2024-08")) / pl.col("2024-08") * 100).alias("change_pct")
 )
-results_table
-# %%
-# 5: Domain analysis
-print("\nCalculating provincial LFPR...")
 
-# calculate by province
+print(combined_pivot)
+
+# %%
+# Provincial LFPR for Feb 2025
 provincial_results = sk.calculate_indicators(
-    design,
-    indicators=["lfpr"],
-    by=["province_code"], as_table=True
+    design_feb,
+    indicators=["labor_force_participation_rate"],
+    by=["province_code"],
+    as_table=True
+).sort("estimate")
+
+print(provincial_results)
+# %%
+# Get survey design info
+design_aug.info(stats=True)  # Pretty print with weight diagnostics
+# %%
+# Industry analysis
+industry_results = sk.calculate_indicators(
+    design_feb,
+    indicators=["labor_force_participation_rate", "informal_employment_rate"],
+    by=["industry_sector"],
+    as_table=True
 )
 
-provincial_results.sort("estimate")
-# %%
-# 6: Additional features
-# Use new improved methods
-design.info(stats=True)  # Pretty print with weight diagnostics
+print(industry_results)
 
-# Or get summary as dict
-summary = design.summary(stats=True)
-print(f"\nKish ESS: {summary['kish_ess']:,.0f} (effective sample size)")
-print(f"CV of weights: {summary['cv_weights']:.3f}")
-summary
-# %%
-# 7: Validate harmonization
-harmonizer = SurveyHarmonizer(dataset_type="sakernas")
-validation = harmonizer.validate_harmonization(df, sak_df, "2025-02")
-validation
-# %%
-# 7: Conversion utilities
-# Available: dbf_to_parquet(), dta_to_parquet(), batch_convert_*()
-
-# %%
-# 8: Industry sector analysis
-sk.calculate_indicators(
-    design,
-    indicators=["lfpr"],
-    by=["industry_sector"], as_table=True
-)
 # %%

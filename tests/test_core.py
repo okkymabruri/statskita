@@ -27,12 +27,17 @@ def test_loader_initialization():
     loader = SakernasLoader()
     assert loader is not None
 
-    # check config loading
-    loader._load_config(wave="2025-02")
-    config = loader.get_config()
-    assert config is not None
-    assert "dataset" in config
-    assert config["dataset"] == "sakernas"
+    # check config loading for all available waves
+    available_waves = ["2024-02", "2024-08", "2025-02"]
+
+    for wave in available_waves:
+        loader._load_config(wave=wave)
+        config = loader.get_config()
+        assert config is not None
+        assert "dataset" in config
+        assert config["dataset"] == "sakernas"
+        assert "wave" in config
+        assert config["wave"] == wave
 
 
 def test_list_categories():
@@ -84,7 +89,7 @@ def test_survey_design_creation():
     assert design.psu_col == "psu"
 
     # get summary
-    summary = design.get_design_summary()
+    summary = design.summary()
     assert "sample_size" in summary
     assert summary["sample_size"] == 5
 

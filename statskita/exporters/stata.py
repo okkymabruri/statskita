@@ -29,7 +29,12 @@ def export_stata(
         NotImplementedError: Stata export not yet fully implemented
     """
     # TODO: consider polars_readstat for native support
-    # convert to pandas first (pyreadstat requirement)
+    # Convert decimal columns to float first (Stata doesn't support decimal type)
+    for col in df.columns:
+        if df[col].dtype == pl.Decimal:
+            df = df.with_columns(pl.col(col).cast(pl.Float64))
+
+    # convert to pandas (pyreadstat requirement)
     df_pd = df.to_pandas()
 
     try:

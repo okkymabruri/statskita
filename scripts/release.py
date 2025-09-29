@@ -40,7 +40,7 @@ def update_version_in_file(new_version):
     content = path.read_text()
     updated = re.sub(r'version = "[^"]+"', f'version = "{new_version}"', content)
     path.write_text(updated)
-    print(f"✓ Updated pyproject.toml to {new_version}")
+    print(f"Updated pyproject.toml to {new_version}")
 
     # Update __init__.py
     init_path = Path("statskita/__init__.py")
@@ -48,7 +48,7 @@ def update_version_in_file(new_version):
         content = init_path.read_text()
         updated = re.sub(r'__version__ = "[^"]+"', f'__version__ = "{new_version}"', content)
         init_path.write_text(updated)
-        print(f"✓ Updated statskita/__init__.py to {new_version}")
+        print(f"Updated statskita/__init__.py to {new_version}")
 
     # Update CITATION.cff
     citation_path = Path("CITATION.cff")
@@ -56,7 +56,7 @@ def update_version_in_file(new_version):
         content = citation_path.read_text()
         updated = re.sub(r'^version: .*$', f'version: {new_version}', content, flags=re.MULTILINE)
         citation_path.write_text(updated)
-        print(f"✓ Updated CITATION.cff to {new_version}")
+        print(f"Updated CITATION.cff to {new_version}")
 
 
 def git_status_clean():

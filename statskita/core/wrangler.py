@@ -125,12 +125,24 @@ class DataWrangler:
         # employment
         work_status_col = self._find_column(result_df, ["work_status", "B5R1"])
         if work_status_col:
-            result_df = result_df.with_columns(
-                [
-                    (pl.col(work_status_col) == "Working").alias("employed"),
-                    (pl.col(work_status_col) == "Not Working").alias("not_working"),
-                ]
-            )
+            # Check if values are strings (after harmonization)
+            sample_val = result_df[work_status_col].drop_nulls().head(1)
+            if len(sample_val) > 0 and isinstance(sample_val[0], str):
+                # Indonesian labels
+                result_df = result_df.with_columns(
+                    [
+                        (pl.col(work_status_col) == "Bekerja").alias("employed"),
+                        (pl.col(work_status_col).is_in(["Sekolah", "Mengurus rumah tangga", "Lainnya", "Tidak mampu bekerja"])).alias("not_working"),
+                    ]
+                )
+            else:
+                # English labels (legacy)
+                result_df = result_df.with_columns(
+                    [
+                        (pl.col(work_status_col) == "Working").alias("employed"),
+                        (pl.col(work_status_col) == "Not Working").alias("not_working"),
+                    ]
+                )
         else:
             # defaults
             result_df = result_df.with_columns(

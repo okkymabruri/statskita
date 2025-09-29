@@ -107,8 +107,10 @@ class IndicatorCalculator:
         Returns:
             Dictionary of TPT estimates by domain
         """
-        # filter to labor force only
-        df_labor_force = self.data.filter(pl.col("in_labor_force"))
+        # filter to working age (15+) labor force only
+        df_labor_force = self.data.filter(
+            (pl.col("age") >= 15) & pl.col("in_labor_force")
+        )
 
         if len(df_labor_force) == 0:
             return {}

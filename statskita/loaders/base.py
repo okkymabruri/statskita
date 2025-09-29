@@ -39,9 +39,8 @@ class SurveyDesignInfo(BaseModel):
 class BaseLoader(ABC):
     """Abstract base class for all data loaders."""
 
-    def __init__(self, preserve_labels: bool = True, decode_codes: bool = True):
+    def __init__(self, preserve_labels: bool = True):
         self.preserve_labels = preserve_labels
-        self.decode_codes = decode_codes
         self._metadata: Optional[DatasetMetadata] = None
 
     @abstractmethod

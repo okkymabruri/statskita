@@ -85,6 +85,7 @@ class SurveyDesign:
         weight_col: str,
         strata_col: Optional[str] = None,
         psu_col: Optional[str] = None,
+        ssu_col: Optional[str] = None,
         fpc: bool = True,  # finite pop correction
         domain_cols: Optional[List[str]] = None,
     ):
@@ -95,6 +96,7 @@ class SurveyDesign:
             weight_col: Column name for survey weights
             strata_col: Column name for strata
             psu_col: Column name for primary sampling units
+            ssu_col: Column name for secondary sampling units
             fpc: Whether to apply finite population correction
             domain_cols: Columns defining domains for subgroup analysis
         """
@@ -102,6 +104,7 @@ class SurveyDesign:
         self.weight_col = weight_col
         self.strata_col = strata_col
         self.psu_col = psu_col
+        self.ssu_col = ssu_col
         self.fpc = fpc
         self.domain_cols = domain_cols or []
 
@@ -115,6 +118,8 @@ class SurveyDesign:
             required_cols.append(self.strata_col)
         if self.psu_col:
             required_cols.append(self.psu_col)
+        if self.ssu_col:
+            required_cols.append(self.ssu_col)
 
         missing_cols = [col for col in required_cols if col not in self.data.columns]
         if missing_cols:
@@ -132,7 +137,7 @@ class SurveyDesign:
         self._design_params = {
             "strata": self._pd_data[self.strata_col] if self.strata_col else None,
             "psu": self._pd_data[self.psu_col] if self.psu_col else None,
-            "ssu": None,  # secondary sampling units
+            "ssu": self._pd_data[self.ssu_col] if self.ssu_col else None,
             "fpc": None if not self.fpc else "default",  # samplics convention
         }
 
@@ -417,8 +422,10 @@ class SurveyDesign:
             "weight_col": self.weight_col,
             "strata_col": self.strata_col,
             "psu_col": self.psu_col,
+            "ssu_col": self.ssu_col,
             "n_strata": len(self.data[self.strata_col].unique()) if self.strata_col else None,
             "n_psu": len(self.data[self.psu_col].unique()) if self.psu_col else None,
+            "n_ssu": len(self.data[self.ssu_col].unique()) if self.ssu_col else None,
             "weight_range": (
                 float(self.data[self.weight_col].min()),
                 float(self.data[self.weight_col].max()),
@@ -433,6 +440,7 @@ def declare_survey(
     weight: str,
     strata: Optional[str] = None,
     psu: Optional[str] = None,
+    ssu: Optional[str] = None,
     fpc: bool = True,
     domain_cols: Optional[List[str]] = None,
 ) -> SurveyDesign:
@@ -446,10 +454,12 @@ def declare_survey(
         weight: Column with survey weights
         strata: Stratification column (if stratified sampling)
         psu: Primary sampling unit/cluster column
+        ssu: Secondary sampling unit column
         fpc: Use finite population correction (default True)
+        domain_cols: Columns defining domains for subgroup analysis
 
     Example:
-        >>> spec = sk.declare_survey(df, weight="WEIGHT", strata="STRATA")
+        >>> spec = sk.declare_survey(df, weight="WEIGHT", strata="STRATA", psu="PSU", ssu="SSU")
         >>> tpak = spec.estimate_proportion("in_labor_force")
     """
     return SurveyDesign(
@@ -457,6 +467,7 @@ def declare_survey(
         weight_col=weight,
         strata_col=strata,
         psu_col=psu,
+        ssu_col=ssu,
         fpc=fpc,
         domain_cols=domain_cols,
     )

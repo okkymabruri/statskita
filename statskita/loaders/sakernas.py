@@ -77,8 +77,8 @@ class SakernasLoader(BaseLoader):
         },
     }
 
-    def __init__(self, preserve_labels: bool = True, decode_codes: bool = True):
-        super().__init__(preserve_labels, decode_codes)
+    def __init__(self, preserve_labels: bool = True):
+        super().__init__(preserve_labels)
         self._value_labels: Optional[Dict[str, Dict[Any, str]]] = None
         self._variable_labels: Optional[Dict[str, str]] = None
         self._config: Optional[Dict[str, Any]] = None
@@ -88,23 +88,22 @@ class SakernasLoader(BaseLoader):
         self,
         file_path: Union[str, Path],
         wave: Optional[str] = None,
-        layout_path: Optional[Union[str, Path]] = None,
         **kwargs,
     ) -> pl.DataFrame:
-        """Load SAKERNAS data file (.sav, .dta, or .dbf).
+        """Load SAKERNAS data file (.sav, .dta, .dbf, or .parquet).
 
         Args:
             file_path: Path to data file
-            wave: Survey wave (e.g., '2024_02') for config selection
-            layout_path: Path to BPS layout Excel file for dynamic parsing
+            wave: Survey wave (e.g., '2025-02') for config selection
             **kwargs: Extra pyreadstat options
         """
         path = self._validate_file_exists(file_path)
 
         # detect file format
         if path.suffix.lower() == ".sav":
+            # Never apply pyreadstat's value formats - we use our YAML configs instead
             df_pd, meta = pyreadstat.read_sav(
-                str(path), apply_value_formats=self.decode_codes, **kwargs
+                str(path), apply_value_formats=False, **kwargs
             )
             # store metadata
             self._value_labels = meta.value_labels if hasattr(meta, "value_labels") else {}
@@ -114,8 +113,9 @@ class SakernasLoader(BaseLoader):
             df = pl.from_pandas(df_pd)
 
         elif path.suffix.lower() == ".dta":
+            # Never apply pyreadstat's value formats - we use our YAML configs instead
             df_pd, meta = pyreadstat.read_dta(
-                str(path), apply_value_formats=self.decode_codes, **kwargs
+                str(path), apply_value_formats=False, **kwargs
             )
             # store metadata
             self._value_labels = meta.value_labels if hasattr(meta, "value_labels") else {}
@@ -144,6 +144,14 @@ class SakernasLoader(BaseLoader):
             self._value_labels = {}
             self._variable_labels = {col: col for col in df.columns}
 
+        elif path.suffix.lower() == ".parquet":
+            # parquet loading (fastest, no metadata)
+            df = pl.read_parquet(path)
+
+            # parquet has no metadata, create empty dicts
+            self._value_labels = {}
+            self._variable_labels = {col: col for col in df.columns}
+
         else:
             raise ValueError(f"Unsupported file format: {path.suffix}")
 
@@ -151,8 +159,8 @@ class SakernasLoader(BaseLoader):
         detected_wave = self._extract_wave_from_path(path)
         wave = wave or detected_wave
 
-        # load configuration using three-tier system
-        self._load_config(wave, layout_path)
+        # load configuration
+        self._load_config(wave)
 
         # create metadata
         self._metadata = DatasetMetadata(
@@ -203,16 +211,12 @@ class SakernasLoader(BaseLoader):
             else None,
         )
 
-    def _load_config(
-        self, wave: Optional[str] = None, layout_path: Optional[Union[str, Path]] = None
-    ):
-        """Load configuration using two-tier system.
+    def _load_config(self, wave: Optional[str] = None):
+        """Load configuration from YAML files.
 
         Priority:
         1. If wave matches existing YAML config, use that with inheritance
-        2. Else fall back to minimal defaults
-
-        Note: layout_path parameter kept for backward compatibility but ignored
+        2. Else fall back to defaults
         """
         config_dir = Path(__file__).parent.parent / "configs" / "sakernas"
 
@@ -278,23 +282,36 @@ class SakernasLoader(BaseLoader):
         return None
 
     def _extract_wave_from_path(self, file_path: Path) -> str:
-        # extract year from various naming conventions
+        # extract wave from various naming conventions
         filename = file_path.stem.lower()
 
         # try common patterns:
         patterns = [
-            r"sak(?:ernas)?_?(\d{4})",
-            r"(\d{4})_?sak",
-            r"sakernas(\d{2})(feb|aug)",  # new 2025 format
-            r"(\d{4})",  # fallback
+            r"sak(?:ernas)?[_-]?(\d{4})[_-](\d{2})",  # sakernas_2025-02 or sak2025_02
+            r"sak(?:ernas)?_?(\d{4})",  # sakernas_2025
+            r"(\d{4})[_-](\d{2})[_-]?sak",  # 2025-02_sak
+            r"(\d{4})_?sak",  # 2025_sak
+            r"sakernas(\d{2})(feb|aug)",  # sakernas25feb
+            r"(\d{4})",  # fallback - just year
         ]
 
         for pattern in patterns:
             match = re.search(pattern, filename)
             if match:
-                year = match.group(1)
-                if 2015 <= int(year) <= 2030:
-                    return year
+                if len(match.groups()) == 2:
+                    # year and month found
+                    year = match.group(1)
+                    month = match.group(2)
+                    # handle 2-digit year
+                    if len(year) == 2:
+                        year = "20" + year
+                    if 2015 <= int(year) <= 2030:
+                        return f"{year}-{month.zfill(2)}"
+                else:
+                    # just year
+                    year = match.group(1)
+                    if 2015 <= int(year) <= 2030:
+                        return year
 
         return "unknown"
 
@@ -540,35 +557,36 @@ class SakernasLoader(BaseLoader):
 def load_sakernas(
     file_path: Union[str, Path],
     preserve_labels: bool = True,
-    decode_codes: bool = True,
-    return_metadata: bool = False,
     wave: Optional[str] = None,
-    layout_path: Optional[Union[str, Path]] = None,
     **kwargs,
 ) -> pl.DataFrame:
     """Load SAKERNAS labor force survey data.
 
     Args:
-        file_path: Path to .sav, .dta, or .dbf file
-        preserve_labels: Keep variable/value labels from SPSS/Stata
-        decode_codes: Convert coded values to labels (e.g. 1->"Male")
-        wave: Survey wave (e.g., '2024_02') for config selection
-        layout_path: Path to BPS layout Excel file for dynamic parsing
+        file_path: Path to .sav, .dta, .dbf, or .parquet file
+        preserve_labels: If False, convert numeric codes to Indonesian text labels
+        wave: Survey wave (e.g., '2025-02') for config selection
         **kwargs: Extra options for pyreadstat
 
     Example:
         >>> df = sk.load_sakernas("sakernas_2024.sav")
-        >>> # or load DBF files with specific wave config
-        >>> df = sk.load_sakernas("sak202502_15+_p1.dbf", wave="2025_02")
-        >>> # or with dynamic layout parsing
-        >>> df = sk.load_sakernas("data.dbf", layout_path="layout.xlsx")
+        >>> # Load with automatic wave detection and label conversion
+        >>> df = sk.load_sakernas("sakernas_2025-02.parquet", preserve_labels=False)
+        >>> # Or specify wave explicitly for older files
+        >>> df = sk.load_sakernas("sak202502.dbf", wave="2025-02", preserve_labels=False)
         >>> print(f"Loaded {len(df)} observations")
     """
-    # remove return_metadata from kwargs if present
-    kwargs.pop("return_metadata", None)
+    loader = SakernasLoader(preserve_labels=preserve_labels)
+    df = loader.load(file_path, wave=wave, **kwargs)
 
-    loader = SakernasLoader(preserve_labels=preserve_labels, decode_codes=decode_codes)
-    df = loader.load(file_path, wave=wave, layout_path=layout_path, **kwargs)
+    # get the actual wave (either passed explicitly or detected from filename)
+    actual_wave = wave or loader._extract_wave_from_path(Path(file_path))
+
+    # apply value labels from config if preserve_labels=False
+    if not preserve_labels and actual_wave and actual_wave != "unknown":
+        from ..core.harmonizer import SurveyHarmonizer
+        harmonizer = SurveyHarmonizer(dataset_type="sakernas")
+        df, _ = harmonizer.harmonize(df, source_wave=actual_wave, preserve_labels=False)
 
     # attach loader metadata to dataframe
     if hasattr(df, "_statskita_metadata"):

@@ -1,0 +1,207 @@
+# SAKERNAS February 2025 wave-specific configuration
+# Contains field mappings and value labels from base configuration
+
+dataset: sakernas
+version: '1.0'
+wave: '2025-02'  # Use hyphen format to match wave parameter in harmonizer
+extends: base.yaml
+
+# Wave-specific metadata
+metadata:
+  reference_period: "February 2025"
+  sample_design: "Two-stage stratified sampling"
+  coverage: "National coverage, all provinces"
+  age_coverage: "15 years and above"
+
+# Field overrides with value labels for conversion
+overrides:
+  # Demographics
+  DEM_SEX:
+    canon_name: gender
+    label: "Jenis kelamin"
+    value_labels:
+      1: "Laki-laki"
+      2: "Perempuan"
+
+  DEM_MRT:
+    canon_name: marital_status
+    label: "Status perkawinan"
+    value_labels:
+      1: "Belum kawin"
+      2: "Kawin"
+      3: "Cerai hidup"
+      4: "Cerai mati"
+
+  DEM_EDL:
+    canon_name: education_level
+    label: "Pendidikan tertinggi yang ditamatkan"
+    value_labels:
+      1: "Tidak/belum tamat SD"
+      2: "SD/sederajat"
+      3: "SMP/sederajat"
+      4: "SMA/sederajat"
+      5: "Diploma I/II"
+      6: "Diploma III"
+      7: "Diploma IV/S1"
+      8: "S2/S3"
+
+  DEM_SKLH:
+    canon_name: school_participation
+    label: "Partisipasi sekolah"
+    value_labels:
+      1: "Tidak/belum pernah sekolah"
+      2: "Masih sekolah"
+      3: "Tidak sekolah lagi"
+
+  # Area classification
+  KLASIFIKAS:
+    canon_name: urban_rural
+    label: "Klasifikasi perkotaan perdesaan"
+    value_labels:
+      1: "Perkotaan"
+      2: "Perdesaan"
+
+  # Main job industry (17 sectors)
+  MJJ_KATEGO:
+    canon_name: industry_sector
+    label: "Lapangan usaha pekerjaan utama"
+    value_labels:
+      1: "Pertanian, Kehutanan, dan Perikanan"
+      2: "Pertambangan dan Penggalian"
+      3: "Industri Pengolahan"
+      4: "Listrik dan Gas"
+      5: "Pengadaan Air, Pengelolaan Sampah"
+      6: "Konstruksi"
+      7: "Perdagangan Besar dan Eceran"
+      8: "Transportasi dan Pergudangan"
+      9: "Penyediaan Akomodasi dan Makan Minum"
+      10: "Informasi dan Komunikasi"
+      11: "Jasa Keuangan dan Asuransi"
+      12: "Real Estate"
+      13: "Jasa Profesional/Bisnis"
+      14: "Administrasi Pemerintahan dan Pertahanan"
+      15: "Pendidikan"
+      16: "Kesehatan dan Kegiatan Sosial"
+      17: "Jasa Lainnya"
+
+  # Employment status
+  MJJ_EMPREL:
+    canon_name: employment_status
+    label: "Status pekerjaan utama"
+    value_labels:
+      1: "Berusaha sendiri"
+      2: "Berusaha dibantu buruh tidak tetap"
+      3: "Berusaha dibantu buruh tetap"
+      4: "Buruh/karyawan/pegawai"
+      5: "Pekerja bebas pertanian"
+      6: "Pekerja bebas non-pertanian"
+      7: "Pekerja keluarga/tidak dibayar"
+
+  # Work activity type (for employment determination)
+  JENISKEGIA:
+    canon_name: work_status
+    label: "Jenis kegiatan"
+    value_labels:
+      1: "Bekerja"
+      2: "Mencari pekerjaan"
+      3: "Sekolah"
+      4: "Mengurus rumah tangga"
+      5: "Lainnya"
+      6: "Tidak mampu bekerja"
+
+  # Migration/citizenship
+  MIG_CTZ:
+    canon_name: citizenship
+    label: "Kewarganegaraan"
+    value_labels:
+      1: "WNI"
+      2: "WNA"
+
+  # Disability indicators
+  DIF_SIGHT:
+    canon_name: difficulty_seeing
+    label: "Kesulitan melihat"
+    value_labels:
+      1: "Tidak kesulitan"
+      2: "Sedikit kesulitan"
+      3: "Banyak kesulitan"
+      4: "Tidak bisa sama sekali"
+
+  DIF_HEAR:
+    canon_name: difficulty_hearing
+    label: "Kesulitan mendengar"
+    value_labels:
+      1: "Tidak kesulitan"
+      2: "Sedikit kesulitan"
+      3: "Banyak kesulitan"
+      4: "Tidak bisa sama sekali"
+
+  DIF_MOBI:
+    canon_name: difficulty_mobility
+    label: "Kesulitan berjalan/naik tangga"
+    value_labels:
+      1: "Tidak kesulitan"
+      2: "Sedikit kesulitan"
+      3: "Banyak kesulitan"
+      4: "Tidak bisa sama sekali"
+
+  # Key survey fields
+  KODE_PROV:
+    canon_name: province_code
+    label: "Province code"
+
+  DEM_AGE:
+    canon_name: age
+    label: "Age in years"
+
+  WKT_JML_U:
+    canon_name: hours_worked
+    label: "Total hours worked in main job"
+
+  WEIGHT:
+    canon_name: survey_weight
+    label: "Survey sampling weight"
+
+  # Province codes (BPS standard)
+  KODE_PROV:
+    canon_name: province_code
+    label: "Kode provinsi"
+    value_labels:
+      11: "Aceh"
+      12: "Sumatera Utara"
+      13: "Sumatera Barat"
+      14: "Riau"
+      15: "Jambi"
+      16: "Sumatera Selatan"
+      17: "Bengkulu"
+      18: "Lampung"
+      19: "Kep. Bangka Belitung"
+      21: "Kep. Riau"
+      31: "DKI Jakarta"
+      32: "Jawa Barat"
+      33: "Jawa Tengah"
+      34: "DI Yogyakarta"
+      35: "Jawa Timur"
+      36: "Banten"
+      51: "Bali"
+      52: "Nusa Tenggara Barat"
+      53: "Nusa Tenggara Timur"
+      61: "Kalimantan Barat"
+      62: "Kalimantan Tengah"
+      63: "Kalimantan Selatan"
+      64: "Kalimantan Timur"
+      65: "Kalimantan Utara"
+      71: "Sulawesi Utara"
+      72: "Sulawesi Tengah"
+      73: "Sulawesi Selatan"
+      74: "Sulawesi Tenggara"
+      75: "Gorontalo"
+      76: "Sulawesi Barat"
+      81: "Maluku"
+      82: "Maluku Utara"
+      91: "Papua Barat"
+      92: "Papua"
+      93: "Papua Selatan"
+      94: "Papua Tengah"
+      95: "Papua Pegunungan"
+      96: "Papua Barat Daya"

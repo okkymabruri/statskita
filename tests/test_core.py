@@ -72,14 +72,16 @@ def test_survey_design_creation():
     from statskita.core.survey import SurveyDesign
 
     # create minimal dummy data
-    df = pl.DataFrame({
-        "id": [1, 2, 3, 4, 5],
-        "weight": [1.0, 1.5, 1.2, 1.0, 1.3],
-        "strata": [1, 1, 2, 2, 3],
-        "psu": [1, 1, 2, 2, 3],
-        "age": [25, 30, 35, 40, 45],
-        "employed": [True, True, False, True, False]
-    })
+    df = pl.DataFrame(
+        {
+            "id": [1, 2, 3, 4, 5],
+            "weight": [1.0, 1.5, 1.2, 1.0, 1.3],
+            "strata": [1, 1, 2, 2, 3],
+            "psu": [1, 1, 2, 2, 3],
+            "age": [25, 30, 35, 40, 45],
+            "employed": [True, True, False, True, False],
+        }
+    )
 
     # create design
     design = SurveyDesign(df, weight_col="weight", strata_col="strata", psu_col="psu")
@@ -102,10 +104,7 @@ def test_wrangler_initialization():
     assert wrangler is not None
 
     # test with dummy data
-    df = pl.DataFrame({
-        "age": [15, 20, 25, 30, 65],
-        "weight": [1.0, 1.0, 1.0, 1.0, 1.0]
-    })
+    df = pl.DataFrame({"age": [15, 20, 25, 30, 65], "weight": [1.0, 1.0, 1.0, 1.0, 1.0]})
 
     # basic wrangling
     result = wrangler.wrangle(df, min_working_age=15)
@@ -119,15 +118,17 @@ def test_indicator_calculation_dummy():
     from statskita.core.survey import SurveyDesign
 
     # create dummy data
-    df = pl.DataFrame({
-        "weight": [1.0] * 10,
-        "strata": [1] * 5 + [2] * 5,
-        "psu": list(range(1, 11)),
-        "age": [25, 30, 35, 40, 45, 50, 55, 60, 20, 22],
-        "working_age_population": [True] * 10,
-        "employed": [True, True, False, True, False, True, True, False, True, True],
-        "in_labor_force": [True, True, True, True, True, True, True, False, True, True]
-    })
+    df = pl.DataFrame(
+        {
+            "weight": [1.0] * 10,
+            "strata": [1] * 5 + [2] * 5,
+            "psu": list(range(1, 11)),
+            "age": [25, 30, 35, 40, 45, 50, 55, 60, 20, 22],
+            "working_age_population": [True] * 10,
+            "employed": [True, True, False, True, False, True, True, False, True, True],
+            "in_labor_force": [True, True, True, True, True, True, True, False, True, True],
+        }
+    )
 
     # create design
     design = SurveyDesign(df, weight_col="weight")

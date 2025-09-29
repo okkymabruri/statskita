@@ -61,7 +61,7 @@ class SurveyHarmonizer:
                             standard_name=canon_name,
                             wave_names={},
                             value_mappings={},
-                            description=meta.get("label", "")
+                            description=meta.get("label", ""),
                         )
 
                     # add wave-specific mapping
@@ -246,8 +246,12 @@ class SurveyHarmonizer:
         return {}
 
     def harmonize(
-        self, df: pl.DataFrame, source_wave: str, target_variables: Optional[List[str]] = None,
-        preserve_labels: bool = False, preserve_original_names: bool = False
+        self,
+        df: pl.DataFrame,
+        source_wave: str,
+        target_variables: Optional[List[str]] = None,
+        preserve_labels: bool = False,
+        preserve_original_names: bool = False,
     ) -> Tuple[pl.DataFrame, Dict[str, str]]:
         """Harmonize survey data to standard variable names and codes.
 
@@ -270,6 +274,7 @@ class SurveyHarmonizer:
         # Derive work_status for August 2024 from R10A and R11
         if source_wave == "2024-08" and "R10A" in df.columns and "R11" in df.columns:
             import polars as pl
+
             harmonized_df = harmonized_df.with_columns(
                 pl.when(pl.col("R10A") == 1)
                 .then(1)  # Working
@@ -303,7 +308,11 @@ class SurveyHarmonizer:
 
             # rename variable (only if preserve_original_names is False)
             # skip if target column already exists (e.g., special handling created it)
-            if not preserve_original_names and actual_column != rule.standard_name and rule.standard_name not in harmonized_df.columns:
+            if (
+                not preserve_original_names
+                and actual_column != rule.standard_name
+                and rule.standard_name not in harmonized_df.columns
+            ):
                 harmonized_df = harmonized_df.rename({actual_column: rule.standard_name})
                 mapping_log[actual_column] = rule.standard_name
 
@@ -328,6 +337,7 @@ class SurveyHarmonizer:
             from pathlib import Path
 
             import yaml
+
             config_dir = Path(__file__).parent.parent / "configs" / self.dataset_type
             wave_config = config_dir / f"{source_wave}.yaml"
 
@@ -372,7 +382,7 @@ class SurveyHarmonizer:
                                 .replace_strict(
                                     old=list(value_labels.keys()),
                                     new=list(value_labels.values()),
-                                    default=None
+                                    default=None,
                                 )
                                 .alias(target_field)
                             )
@@ -412,7 +422,7 @@ class SurveyHarmonizer:
                                         .replace_strict(
                                             old=list(value_labels.keys()),
                                             new=list(value_labels.values()),
-                                            default=None
+                                            default=None,
                                         )
                                         .alias(target_field)
                                     )
@@ -454,18 +464,28 @@ class SurveyHarmonizer:
                 # Numeric codes - most common in modern data
                 # Status 1 = Bekerja (Working) - clearly employed
                 # Status 2 = Temporarily not working - could be unemployed if looking for work
-                result_df = result_df.with_columns([
-                    pl.col("work_status").is_in([1]).alias("employed"),
-                    pl.col("work_status").is_in([3, 4, 5, 6]).alias("not_working"),
-                    pl.col("work_status").is_in([2]).alias("temp_not_working")
-                ])
+                result_df = result_df.with_columns(
+                    [
+                        pl.col("work_status").is_in([1]).alias("employed"),
+                        pl.col("work_status").is_in([3, 4, 5, 6]).alias("not_working"),
+                        pl.col("work_status").is_in([2]).alias("temp_not_working"),
+                    ]
+                )
             else:
                 # String values (if value labels were applied)
-                result_df = result_df.with_columns([
-                    (pl.col("work_status") == "Bekerja").alias("employed"),
-                    pl.col("work_status").is_in(["Sekolah", "Mengurus rumah tangga", "Lainnya", "Tidak mampu bekerja"]).alias("not_working"),
-                    (pl.col("work_status") == "Pernah bekerja tetapi sedang tidak bekerja").alias("temp_not_working")
-                ])
+                result_df = result_df.with_columns(
+                    [
+                        (pl.col("work_status") == "Bekerja").alias("employed"),
+                        pl.col("work_status")
+                        .is_in(
+                            ["Sekolah", "Mengurus rumah tangga", "Lainnya", "Tidak mampu bekerja"]
+                        )
+                        .alias("not_working"),
+                        (
+                            pl.col("work_status") == "Pernah bekerja tetapi sedang tidak bekerja"
+                        ).alias("temp_not_working"),
+                    ]
+                )
 
             # For unemployment, need to check job seeking status
             # Use canonical name first, fallback to raw column names
@@ -492,10 +512,9 @@ class SurveyHarmonizer:
 
                 # Unemployed = (not working OR temporarily not working) AND actively seeking work
                 result_df = result_df.with_columns(
-                    (
-                        (~pl.col("employed") | pl.col("temp_not_working")) &
-                        seeking_condition
-                    ).alias("unemployed")
+                    ((~pl.col("employed") | pl.col("temp_not_working")) & seeking_condition).alias(
+                        "unemployed"
+                    )
                 )
 
                 # Update employed to include temp_not_working who are NOT looking for work
@@ -506,10 +525,7 @@ class SurveyHarmonizer:
                     .alias("employed")
                 )
             else:
-                result_df = result_df.with_columns(
-                    pl.lit(False).alias("unemployed")
-                )
-
+                result_df = result_df.with_columns(pl.lit(False).alias("unemployed"))
 
         # Calculate labor force if we have employment indicators
         if "employed" in result_df.columns and "unemployed" in result_df.columns:
@@ -542,9 +558,7 @@ class SurveyHarmonizer:
                 )
             else:
                 # numeric: 2 = Masih sekolah
-                result_df = result_df.with_columns(
-                    (pl.col("DEM_SKLH") == 2).alias("in_school")
-                )
+                result_df = result_df.with_columns((pl.col("DEM_SKLH") == 2).alias("in_school"))
         elif "school_participation" in df.columns:
             # harmonized name
             sample_val = df["school_participation"].drop_nulls().head(1)
@@ -565,35 +579,43 @@ class SurveyHarmonizer:
             col_dtype = result_df["employment_status"].dtype
             if col_dtype in [pl.Float64, pl.Float32, pl.Int64, pl.Int32, pl.Decimal]:
                 # Numeric: formal = 3 or 4, informal = 1, 2, 5, 6, 7
-                result_df = result_df.with_columns([
-                    pl.col("employment_status").is_in([3, 4]).alias("formal_employment"),
-                    pl.col("employment_status").is_in([1, 2, 5, 6, 7]).alias("informal_employment")
-                ])
+                result_df = result_df.with_columns(
+                    [
+                        pl.col("employment_status").is_in([3, 4]).alias("formal_employment"),
+                        pl.col("employment_status")
+                        .is_in([1, 2, 5, 6, 7])
+                        .alias("informal_employment"),
+                    ]
+                )
             else:
                 # String values - would need mapping
-                result_df = result_df.with_columns([
-                    pl.lit(False).alias("formal_employment"),
-                    pl.lit(False).alias("informal_employment")
-                ])
+                result_df = result_df.with_columns(
+                    [
+                        pl.lit(False).alias("formal_employment"),
+                        pl.lit(False).alias("informal_employment"),
+                    ]
+                )
         elif "STATUS_PEK" in result_df.columns:
             # Direct check on STATUS_PEK if employment_status not harmonized
             col_dtype = result_df["STATUS_PEK"].dtype
             if col_dtype in [pl.Float64, pl.Float32, pl.Int64, pl.Int32, pl.Decimal]:
-                result_df = result_df.with_columns([
-                    pl.col("STATUS_PEK").is_in([3, 4]).alias("formal_employment"),
-                    pl.col("STATUS_PEK").is_in([1, 2, 5, 6, 7]).alias("informal_employment")
-                ])
+                result_df = result_df.with_columns(
+                    [
+                        pl.col("STATUS_PEK").is_in([3, 4]).alias("formal_employment"),
+                        pl.col("STATUS_PEK").is_in([1, 2, 5, 6, 7]).alias("informal_employment"),
+                    ]
+                )
 
         # Create total wages indicator (cash + goods)
         if "wage_cash" in result_df.columns:
             if "wage_goods" in result_df.columns:
                 result_df = result_df.with_columns(
-                    (pl.col("wage_cash").fill_null(0) + pl.col("wage_goods").fill_null(0)).alias("total_wage")
+                    (pl.col("wage_cash").fill_null(0) + pl.col("wage_goods").fill_null(0)).alias(
+                        "total_wage"
+                    )
                 )
             else:
-                result_df = result_df.with_columns(
-                    pl.col("wage_cash").alias("total_wage")
-                )
+                result_df = result_df.with_columns(pl.col("wage_cash").alias("total_wage"))
 
         return result_df
 

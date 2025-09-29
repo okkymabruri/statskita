@@ -1,6 +1,7 @@
 """
 SAKERNAS Analysis - Comparing August 2024 and February 2025
 """
+
 # %%
 import os
 from pathlib import Path
@@ -36,19 +37,13 @@ sak_aug = sk.wrangle(df_aug, harmonize=True, source_wave="2024-08")
 
 # %%
 # Create survey designs
-design_feb = sk.declare_survey(
-    sak_feb,
-    weight="WEIGHT",
-    strata="STRATA",
-    psu="PSU",
-    ssu="SSU"
-)
+design_feb = sk.declare_survey(sak_feb, weight="WEIGHT", strata="STRATA", psu="PSU", ssu="SSU")
 
 design_aug = sk.declare_survey(
     sak_aug,
     weight="WEIGHT",
     strata=None,  # avoid singleton PSU issues
-    psu="PSU"
+    psu="PSU",
 )
 
 # %%
@@ -65,16 +60,13 @@ combined = pl.concat([results_aug, results_feb])
 
 # Pivot to get waves as columns
 combined_pivot = combined.pivot(
-    values="estimate",
-    index="indicator",
-    on="wave",
-    aggregate_function="first"
+    values="estimate", index="indicator", on="wave", aggregate_function="first"
 ).sort("indicator")
 
 # Add change columns
 combined_pivot = combined_pivot.with_columns(
     (pl.col("2025-02") - pl.col("2024-08")).alias("change"),
-    ((pl.col("2025-02") - pl.col("2024-08")) / pl.col("2024-08") * 100).alias("change_pct")
+    ((pl.col("2025-02") - pl.col("2024-08")) / pl.col("2024-08") * 100).alias("change_pct"),
 )
 
 print(combined_pivot)
@@ -82,10 +74,7 @@ print(combined_pivot)
 # %%
 # Provincial LFPR for Feb 2025
 provincial_results = sk.calculate_indicators(
-    design_feb,
-    indicators=["labor_force_participation_rate"],
-    by=["province_code"],
-    as_table=True
+    design_feb, indicators=["labor_force_participation_rate"], by=["province_code"], as_table=True
 ).sort("estimate")
 
 print(provincial_results)
@@ -98,7 +87,7 @@ industry_results = sk.calculate_indicators(
     design_feb,
     indicators=["labor_force_participation_rate", "informal_employment_rate"],
     by=["industry_sector"],
-    as_table=True
+    as_table=True,
 )
 
 print(industry_results)

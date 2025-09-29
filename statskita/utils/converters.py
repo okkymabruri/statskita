@@ -111,7 +111,6 @@ def batch_convert_dbf_to_parquet(directory: Union[str, Path], pattern: str = "*.
     return parquet_files
 
 
-
 def dta_to_parquet(
     dta_path: Union[str, Path],
     parquet_path: Optional[Union[str, Path]] = None,
@@ -174,7 +173,9 @@ def dta_to_parquet(
 
         original_mb = dta_path.stat().st_size / (1024 * 1024)
         parquet_mb = parquet_path.stat().st_size / (1024 * 1024)
-        print(f"Converted in {elapsed:.1f}s ({size_reduction:.0f}% smaller, {original_mb:.1f} MB to {parquet_mb:.1f} MB)")
+        print(
+            f"Converted in {elapsed:.1f}s ({size_reduction:.0f}% smaller, {original_mb:.1f} MB to {parquet_mb:.1f} MB)"
+        )
     else:
         print(f"Using cached: {parquet_path.name}")
 
@@ -184,7 +185,7 @@ def dta_to_parquet(
 def batch_convert_dta_to_parquet(
     source_dir: Union[str, Path],
     target_dir: Optional[Union[str, Path]] = None,
-    pattern: str = "*.dta"
+    pattern: str = "*.dta",
 ) -> list[Path]:
     """Convert all Stata DTA files to Parquet.
 

@@ -62,8 +62,7 @@ def load_config_with_inheritance(config_path: Path) -> Dict[str, Any]:
                         if field_name in merged["fields"]:
                             # update existing field
                             merged["fields"][field_name] = deep_merge(
-                                merged["fields"][field_name],
-                                field_overrides
+                                merged["fields"][field_name], field_overrides
                             )
                         else:
                             # add new field

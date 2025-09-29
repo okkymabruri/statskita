@@ -32,10 +32,12 @@ def test_harmonizer_with_dummy_data():
     harmonizer = SurveyHarmonizer("sakernas")
 
     # minimal dummy data
-    df = pl.DataFrame({
-        "PROV": [11, 12],
-        "B4K5": [25, 30]  # age field
-    })
+    df = pl.DataFrame(
+        {
+            "PROV": [11, 12],
+            "B4K5": [25, 30],  # age field
+        }
+    )
 
     # harmonize
     result, log = harmonizer.harmonize(df, "2025")

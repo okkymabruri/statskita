@@ -108,9 +108,7 @@ class IndicatorCalculator:
             Dictionary of TPT estimates by domain
         """
         # filter to working age (15+) labor force only
-        df_labor_force = self.data.filter(
-            (pl.col("age") >= 15) & pl.col("in_labor_force")
-        )
+        df_labor_force = self.data.filter((pl.col("age") >= 15) & pl.col("in_labor_force"))
 
         if len(df_labor_force) == 0:
             return {}
@@ -372,9 +370,9 @@ class IndicatorCalculator:
                 value=100.0 - lfpr_estimate.value,
                 se=lfpr_estimate.se,  # Same standard error
                 ci_low=100.0 - lfpr_estimate.ci_high,  # Note: inverted
-                ci_high=100.0 - lfpr_estimate.ci_low,   # Note: inverted
+                ci_high=100.0 - lfpr_estimate.ci_low,  # Note: inverted
                 df=lfpr_estimate.df,
-                deff=lfpr_estimate.deff if hasattr(lfpr_estimate, 'deff') else None,
+                deff=lfpr_estimate.deff if hasattr(lfpr_estimate, "deff") else None,
             )
 
             results[domain] = IndicatorResult(
@@ -548,7 +546,9 @@ class IndicatorCalculator:
 
         # priority 3: conditional indicators (if data available)
         if "in_school" in self.data.columns:
-            results["neet_rate"] = self.calculate_neet_rate(by=by, confidence_level=confidence_level)
+            results["neet_rate"] = self.calculate_neet_rate(
+                by=by, confidence_level=confidence_level
+            )
 
         if "hours_worked" in self.data.columns:
             results["underemployment_rate"] = self.calculate_underemployment_rate(
@@ -627,7 +627,6 @@ def calculate_indicators(
         "ier": "informal_employment_rate",
         "uer": "underemployment_rate",
         "ir": "inactivity_rate",
-
         # Indonesian names (BPS official terminology)
         "tpak": "labor_force_participation_rate",  # Tingkat Partisipasi Angkatan Kerja
         "tpt": "unemployment_rate",  # Tingkat Pengangguran Terbuka
@@ -639,7 +638,6 @@ def calculate_indicators(
         "tingkat_informal": "informal_employment_rate",
         "kegiatan_informal": "informal_employment_rate",
         "tingkat_kegiatan_informal": "informal_employment_rate",
-
         # Common English variants
         "labour_force_participation_rate": "labor_force_participation_rate",
         "labour_force_rate": "labor_force_participation_rate",
@@ -680,7 +678,11 @@ def calculate_indicators(
                 confidence_level=confidence_level,
                 age_range=kwargs.get("age_range", (15, 24)),
             )
-        elif english_name in ["labor_force_participation_rate", "employment_rate", "inactivity_rate"]:
+        elif english_name in [
+            "labor_force_participation_rate",
+            "employment_rate",
+            "inactivity_rate",
+        ]:
             results[indicator] = method(
                 by=by,
                 confidence_level=confidence_level,
@@ -746,17 +748,21 @@ def format_indicators_as_table(
             if include_ci:
                 # Format CI/SE based on indicator type
                 if indicator_name in ["average_wage", "rata_rata_upah"]:
-                    row.update({
-                        "std_error": estimate.se,
-                        "ci_lower": estimate.ci_low,
-                        "ci_upper": estimate.ci_high,
-                    })
+                    row.update(
+                        {
+                            "std_error": estimate.se,
+                            "ci_lower": estimate.ci_low,
+                            "ci_upper": estimate.ci_high,
+                        }
+                    )
                 else:
-                    row.update({
-                        "std_error": round(estimate.se, 2),
-                        "ci_lower": round(estimate.ci_low, 2),
-                        "ci_upper": round(estimate.ci_high, 2),
-                    })
+                    row.update(
+                        {
+                            "std_error": round(estimate.se, 2),
+                            "ci_lower": round(estimate.ci_low, 2),
+                            "ci_upper": round(estimate.ci_high, 2),
+                        }
+                    )
             rows.append(row)
 
     if not rows:
@@ -768,11 +774,13 @@ def format_indicators_as_table(
         if has_multiple_domains:
             schema["domain"] = []
         if include_ci:
-            schema.update({
-                "std_error": [],
-                "ci_lower": [],
-                "ci_upper": [],
-            })
+            schema.update(
+                {
+                    "std_error": [],
+                    "ci_lower": [],
+                    "ci_upper": [],
+                }
+            )
         return pl.DataFrame(schema)
 
     df = pl.DataFrame(rows)
@@ -785,9 +793,9 @@ def format_indicators_as_table(
 
     # Add a print method as a convenience
     def print_table():
-        print("\n" + "="*75)
+        print("\n" + "=" * 75)
         print("Labor Force Indicators")
-        print("="*75)
+        print("=" * 75)
         for row in df.iter_rows(named=True):
             ind = row["indicator"]
             dom = row["domain"]
@@ -797,7 +805,7 @@ def format_indicators_as_table(
                 print(f"{ind:25} {dom:15} {est:6.2f}% ± {se:4.2f}%")
             else:
                 print(f"{ind:25} {dom:15} {est:6.2f}%")
-        print("="*75)
+        print("=" * 75)
 
     # Attach print method to DataFrame
     df.print_table = print_table

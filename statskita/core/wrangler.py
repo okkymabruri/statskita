@@ -134,7 +134,16 @@ class DataWrangler:
                     result_df = result_df.with_columns(
                         [
                             (pl.col(work_status_col) == "Bekerja").alias("employed"),
-                            (pl.col(work_status_col).is_in(["Sekolah", "Mengurus rumah tangga", "Lainnya", "Tidak mampu bekerja"])).alias("not_working"),
+                            (
+                                pl.col(work_status_col).is_in(
+                                    [
+                                        "Sekolah",
+                                        "Mengurus rumah tangga",
+                                        "Lainnya",
+                                        "Tidak mampu bekerja",
+                                    ]
+                                )
+                            ).alias("not_working"),
                         ]
                     )
                 else:
@@ -151,8 +160,12 @@ class DataWrangler:
                     [
                         (pl.col(work_status_col) == 1).alias("employed"),  # 1 = Working
                         (pl.col(work_status_col) == 2).alias("unemployed"),  # 2 = Unemployed
-                        (pl.col(work_status_col).is_in([1, 2])).alias("in_labor_force"),  # 1-2 = in labor force
-                        (pl.col(work_status_col) == 3).alias("not_in_labor_force"),  # 3 = not in labor force
+                        (pl.col(work_status_col).is_in([1, 2])).alias(
+                            "in_labor_force"
+                        ),  # 1-2 = in labor force
+                        (pl.col(work_status_col) == 3).alias(
+                            "not_in_labor_force"
+                        ),  # 3 = not in labor force
                     ]
                 )
         else:
@@ -179,9 +192,7 @@ class DataWrangler:
             # ensure hours column is numeric
             if result_df[hours_col].dtype in [pl.Utf8, pl.String]:
                 # convert string to numeric if needed
-                result_df = result_df.with_columns(
-                    pl.col(hours_col).cast(pl.Int64, strict=False)
-                )
+                result_df = result_df.with_columns(pl.col(hours_col).cast(pl.Int64, strict=False))
             result_df = result_df.with_columns(
                 (pl.col("employed") & (pl.col(hours_col) < 35)).alias("underemployed")
             )

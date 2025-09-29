@@ -393,8 +393,9 @@ class SurveyDesign:
                 # Handle singleton PSUs by collapsing strata
                 if strata_values is not None and psu_values is not None:
                     import pandas as pd
-                    strata_psu_df = pd.DataFrame({'strata': strata_values, 'psu': psu_values})
-                    psu_counts = strata_psu_df.groupby('strata')['psu'].nunique()
+
+                    strata_psu_df = pd.DataFrame({"strata": strata_values, "psu": psu_values})
+                    psu_counts = strata_psu_df.groupby("strata")["psu"].nunique()
                     singleton_strata = psu_counts[psu_counts == 1].index
 
                     if len(singleton_strata) > 0:
@@ -409,7 +410,10 @@ class SurveyDesign:
                                 # Find numerically closest stratum
                                 s_idx = all_strata.index(s)
                                 # Try next stratum first
-                                if s_idx + 1 < len(all_strata) and all_strata[s_idx + 1] in non_singleton:
+                                if (
+                                    s_idx + 1 < len(all_strata)
+                                    and all_strata[s_idx + 1] in non_singleton
+                                ):
                                     replacement = all_strata[s_idx + 1]
                                 # Try previous stratum
                                 elif s_idx > 0 and all_strata[s_idx - 1] in non_singleton:
@@ -491,20 +495,25 @@ class SurveyDesign:
 
         if stats and self.weight_col:
             import numpy as np
+
             w = self.data[self.weight_col].to_numpy()
-            basic.update({
-                "cv_weights": float(np.std(w, ddof=0) / np.mean(w)),
-                "kish_ess": float(np.sum(w)**2 / np.sum(w**2)),
-                "median_weight": float(np.median(w)),
-            })
+            basic.update(
+                {
+                    "cv_weights": float(np.std(w, ddof=0) / np.mean(w)),
+                    "kish_ess": float(np.sum(w) ** 2 / np.sum(w**2)),
+                    "median_weight": float(np.median(w)),
+                }
+            )
 
         return basic
 
     def __repr__(self) -> str:
         """String representation of the survey design."""
         s = self.summary()
-        return (f"SurveyDesign(n={s['sample_size']:,}, strata={s['n_strata']}, "
-                f"psu={s['n_psu']}, weight='{s['weight_col']}')")
+        return (
+            f"SurveyDesign(n={s['sample_size']:,}, strata={s['n_strata']}, "
+            f"psu={s['n_psu']}, weight='{s['weight_col']}')"
+        )
 
     def info(self, stats: bool = False) -> None:
         """Print formatted summary of survey design.
@@ -514,24 +523,24 @@ class SurveyDesign:
         """
         s = self.summary(stats=stats)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Survey Design Summary")
-        print("="*60)
+        print("=" * 60)
         print(f"Sample size:         {s['sample_size']:,}")
         print(f"Weight column:       {s['weight_col']}")
         print(f"Strata:              {s['n_strata']} (column: {s['strata_col']})")
         print(f"PSUs:                {s['n_psu']} (column: {s['psu_col']})")
-        if s['ssu_col']:
+        if s["ssu_col"]:
             print(f"SSUs:                {s['n_ssu']} (column: {s['ssu_col']})")
         print(f"Weight range:        {s['weight_range'][0]:.1f} - {s['weight_range'][1]:.1f}")
         print(f"FPC:                 {s['fpc']}")
 
-        if stats and 'cv_weights' in s:
+        if stats and "cv_weights" in s:
             print("\nWeight Diagnostics:")
             print(f"  CV of weights:     {s['cv_weights']:.3f}")
             print(f"  Kish ESS:          {s['kish_ess']:,.0f}")
             print(f"  Median weight:     {s['median_weight']:.1f}")
-        print("="*60)
+        print("=" * 60)
 
 
 def declare_survey(

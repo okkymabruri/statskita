@@ -102,9 +102,7 @@ class SakernasLoader(BaseLoader):
         # detect file format
         if path.suffix.lower() == ".sav":
             # Never apply pyreadstat's value formats - we use our YAML configs instead
-            df_pd, meta = pyreadstat.read_sav(
-                str(path), apply_value_formats=False, **kwargs
-            )
+            df_pd, meta = pyreadstat.read_sav(str(path), apply_value_formats=False, **kwargs)
             # store metadata
             self._value_labels = meta.value_labels if hasattr(meta, "value_labels") else {}
             self._variable_labels = meta.variable_labels if hasattr(meta, "variable_labels") else {}
@@ -114,9 +112,7 @@ class SakernasLoader(BaseLoader):
 
         elif path.suffix.lower() == ".dta":
             # Never apply pyreadstat's value formats - we use our YAML configs instead
-            df_pd, meta = pyreadstat.read_dta(
-                str(path), apply_value_formats=False, **kwargs
-            )
+            df_pd, meta = pyreadstat.read_dta(str(path), apply_value_formats=False, **kwargs)
             # store metadata
             self._value_labels = meta.value_labels if hasattr(meta, "value_labels") else {}
             self._variable_labels = meta.variable_labels if hasattr(meta, "variable_labels") else {}
@@ -676,8 +672,14 @@ def load_sakernas(
     # apply value labels from config if preserve_labels=False
     if not preserve_labels and actual_wave and actual_wave != "unknown":
         from ..core.harmonizer import SurveyHarmonizer
+
         harmonizer = SurveyHarmonizer(dataset_type="sakernas")
-        df, _ = harmonizer.harmonize(df, source_wave=actual_wave, preserve_labels=False, preserve_original_names=preserve_original_names)
+        df, _ = harmonizer.harmonize(
+            df,
+            source_wave=actual_wave,
+            preserve_labels=False,
+            preserve_original_names=preserve_original_names,
+        )
 
     # attach loader metadata to dataframe
     if hasattr(df, "_statskita_metadata"):

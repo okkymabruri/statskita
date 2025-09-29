@@ -1,23 +1,21 @@
-# Release commands for StatsKita
-# Updates version in: pyproject.toml, statskita/__init__.py, CITATION.cff
+# Version management for StatsKita
+# Main branch releases only: make release-patch/minor/major or make release VERSION=x.y.z
 
-.PHONY: release-patch release-minor release-major release
+.PHONY: release release-patch release-minor release-major
 
-# Quick releases
+# Release patch version (main branch only)
 release-patch:
-	@echo "Releasing patch version..."
-	@uv run python scripts/release.py patch
+	@uv run python scripts/version.py release
 
+# Release minor version (main branch only)
 release-minor:
-	@echo "Releasing minor version..."
-	@uv run python scripts/release.py minor
+	@uv run python scripts/version.py release --minor
 
+# Release major version (main branch only)
 release-major:
-	@echo "Releasing major version..."
-	@uv run python scripts/release.py major
+	@uv run python scripts/version.py release --major
 
-# Custom version
+# Release specific version (e.g., make release VERSION=0.2.0)
 release:
-	@test -n "$(VERSION)" || (echo "Error: VERSION not set" && exit 1)
-	@echo "Releasing version $(VERSION)..."
-	@uv run python scripts/release.py $(VERSION)
+	@test -n "$(VERSION)" || (echo "Error: Set VERSION=x.y.z" && exit 1)
+	@uv run python scripts/version.py release $(VERSION)

@@ -1,6 +1,6 @@
 [project]
 name = "statskita"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python toolkit for Indonesian official microdata (SAKERNAS)"
 readme = "README.md"
 authors = [
@@ -78,7 +78,7 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "0.2.0"
 
 [tool.ruff.lint]
 select = [

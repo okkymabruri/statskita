@@ -13,6 +13,9 @@ metadata:
   education_classification: ISCED-2011 aligned
 overrides:
   # Essential overrides for proper codelist application
+  DEM_AGE:
+    canon_name: age
+    label: "Age"
   KODE_PROV:
     canon_name: province_code
     codelist: province_codes

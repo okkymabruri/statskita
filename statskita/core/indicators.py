@@ -93,6 +93,75 @@ class IndicatorCalculator:
 
         return results
 
+    def calculate_female_labor_force_participation_rate(
+        self,
+        by: Optional[List[str]] = None,
+        min_working_age: int = 15,
+        confidence_level: float = 0.95,
+    ) -> Dict[str, IndicatorResult]:
+        """Calculate Female Labor Force Participation Rate.
+
+        FLFPR = (Female Labor Force / Female Working Age Population) * 100
+
+        Args:
+            by: Grouping variables
+            min_working_age: Minimum working age
+            confidence_level: Confidence level for intervals
+
+        Returns:
+            Dictionary of FLFPR estimates by domain
+        """
+        # check gender column exists
+        if "gender" not in self.data.columns:
+            return {}
+
+        # filter working age females
+        df_working = self.data.with_columns(
+            [
+                (pl.col("age") >= min_working_age).alias("working_age"),
+                pl.when(pl.col("in_labor_force").is_not_null())
+                .then(pl.col("in_labor_force"))
+                .otherwise(False)
+                .alias("in_lf"),
+            ]
+        ).filter(
+            (pl.col("working_age")) & (pl.col("gender") == "PEREMPUAN")
+        )
+
+        if len(df_working) == 0:
+            return {}
+
+        # create survey design for working age females
+        female_design = SurveyDesign(
+            data=df_working,
+            weight_col=self.design.weight_col,
+            strata_col=self.design.strata_col,
+            psu_col=self.design.psu_col,
+            fpc=self.design.fpc,
+        )
+
+        # calculate female lfpr
+        flfpr_estimates = female_design.estimate_proportion(
+            variable="in_lf", by=by, confidence_level=confidence_level
+        )
+
+        # wrap results
+        results = {}
+        for domain, estimate in flfpr_estimates.items():
+            est_pct = estimate.as_pct()
+            results[domain] = IndicatorResult(
+                indicator_name="Female Labor Force Participation Rate (TPAK Perempuan)",
+                estimate=est_pct,
+                domain=domain if domain != "overall" else None,
+                metadata={
+                    "min_working_age": min_working_age,
+                    "sample_size": len(df_working),
+                    "denominator": "Female working age population",
+                },
+            )
+
+        return results
+
     def calculate_unemployment_rate(
         self, by: Optional[List[str]] = None, confidence_level: float = 0.95
     ) -> Dict[str, IndicatorResult]:
@@ -609,6 +678,7 @@ def calculate_indicators(
     # Primary English indicator methods
     indicator_methods = {
         "labor_force_participation_rate": calculator.calculate_labor_force_participation_rate,
+        "female_labor_force_participation_rate": calculator.calculate_female_labor_force_participation_rate,
         "unemployment_rate": calculator.calculate_unemployment_rate,
         "employment_rate": calculator.calculate_employment_rate,
         "neet_rate": calculator.calculate_neet_rate,
@@ -620,15 +690,12 @@ def calculate_indicators(
 
     # Comprehensive aliases for convenience
     aliases = {
-        # Short English aliases
+        # Short English alias (only widely recognized abbreviations)
         "lfpr": "labor_force_participation_rate",  # common abbreviation
-        "ur": "unemployment_rate",
-        "er": "employment_rate",
-        "ier": "informal_employment_rate",
-        "uer": "underemployment_rate",
-        "ir": "inactivity_rate",
+        "flfpr": "female_labor_force_participation_rate",
         # Indonesian names (BPS official terminology)
         "tpak": "labor_force_participation_rate",  # Tingkat Partisipasi Angkatan Kerja
+        "tpak_perempuan": "female_labor_force_participation_rate",
         "tpt": "unemployment_rate",  # Tingkat Pengangguran Terbuka
         "tingkat_kerja": "employment_rate",  # Tingkat Kesempatan Kerja
         "tingkat_kesempatan_kerja": "employment_rate",
@@ -638,9 +705,11 @@ def calculate_indicators(
         "tingkat_informal": "informal_employment_rate",
         "kegiatan_informal": "informal_employment_rate",
         "tingkat_kegiatan_informal": "informal_employment_rate",
-        # Common English variants
+        # Common English variants (descriptive, not cryptic)
         "labour_force_participation_rate": "labor_force_participation_rate",
         "labour_force_rate": "labor_force_participation_rate",
+        "female_lfpr": "female_labor_force_participation_rate",
+        "female_labour_force_participation_rate": "female_labor_force_participation_rate",
         "unemployment": "unemployment_rate",
         "employment": "employment_rate",
         "underemployment": "underemployment_rate",
@@ -680,6 +749,7 @@ def calculate_indicators(
             )
         elif english_name in [
             "labor_force_participation_rate",
+            "female_labor_force_participation_rate",
             "employment_rate",
             "inactivity_rate",
         ]:

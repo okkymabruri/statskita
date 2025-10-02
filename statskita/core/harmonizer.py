@@ -125,8 +125,9 @@ class SurveyHarmonizer:
                     "2022": "B4K5",
                     "2023": "B4K5",
                     "2024": "B4K5",
-                    "2024-08": "K10",  # August 2024
+                    "2024-08": "K10",  # August 2024 - direct age value
                     "2025-02": "DEM_AGE",
+                    # Note: 2023-02, 2023-08, 2024-02, 2024-08 use birth date columns that need calculation
                 },
                 description="Age in completed years",
             ),
@@ -159,7 +160,10 @@ class SurveyHarmonizer:
                     "2021": "B5R1",
                     "2022": "B5R1",
                     "2023": "B5R1",
+                    "2023-02": "JENISKEGIA",
+                    "2023-08": "JENISKEGIA",
                     "2024": "B5R1",
+                    "2024-02": "JENISKEGIA",
                     # Note: 2024-08 doesn't have direct work_status, needs derivation from R10A and R11
                     "2025": "B5R1",
                     "2025-02": "JENISKEGIA",
@@ -185,8 +189,13 @@ class SurveyHarmonizer:
                     "2021": "WEIGHT",
                     "2022": "WEIGHT",
                     "2023": "WEIGHT",
+                    "2023-02": "WEIGHT",
+                    "2023-08": "WEIGHTR",  # different name in Aug 2023
                     "2024": "WEIGHT",
+                    "2024-02": "WEIGHTR",  # different name in Feb 2024
+                    "2024-08": "WEIGHT",
                     "2025": "WEIGHT",
+                    "2025-02": "WEIGHT",
                 },
                 description="Survey sampling weight",
             ),
@@ -238,6 +247,53 @@ class SurveyHarmonizer:
                 },
                 description="Wages/salary in goods from main job (monthly value)",
             ),
+            "psu": VariableMapping(
+                standard_name="psu",
+                wave_names={
+                    "2021": "PSU",
+                    "2022": "PSU",
+                    "2023": "PSU",
+                    "2023-02": "PSU",
+                    "2023-08": "PSU",
+                    "2024": "PSU",
+                    "2024-02": "PSU",
+                    "2024-08": "PSU",
+                    "2025": "PSU",
+                    "2025-02": "PSU",
+                },
+                description="Primary Sampling Unit (cluster)",
+            ),
+            "ssu": VariableMapping(
+                standard_name="ssu",
+                wave_names={
+                    "2021": "SSU",
+                    "2022": "SSU",
+                    "2023": "SSU",
+                    "2023-02": "SSU",
+                    "2024": "SSU",
+                    "2024-02": "SSU",
+                    "2025": "SSU",
+                    "2025-02": "SSU",
+                    # Note: 2023-08 and 2024-08 don't have SSU
+                },
+                description="Secondary Sampling Unit",
+            ),
+            "strata": VariableMapping(
+                standard_name="strata",
+                wave_names={
+                    "2021": "STRATA",
+                    "2022": "STRATA",
+                    "2023": "STRATA",
+                    "2023-02": "STRATA",
+                    "2023-08": "STRATA",
+                    "2024": "STRATA",
+                    "2024-02": "STRATA",
+                    "2024-08": "STRATA",
+                    "2025": "STRATA",
+                    "2025-02": "STRATA",
+                },
+                description="Sampling stratum",
+            ),
         }
 
     def _get_susenas_rules(self) -> Dict[str, VariableMapping]:
@@ -271,21 +327,35 @@ class SurveyHarmonizer:
         harmonized_df = df.clone()
         mapping_log = {}
 
-        # Derive work_status for August 2024 from R10A and R11
-        if source_wave == "2024-08" and "R10A" in df.columns and "R11" in df.columns:
-            import polars as pl
+        # Map age column using config system (proper 3-tier design)
+        if "age" in self._rules and "age" not in harmonized_df.columns:
+            age_rule = self._rules["age"]
+            age_source = age_rule.wave_names.get(source_wave)
 
+            if age_source and age_source in df.columns:
+                # Config-driven mapping (primary)
+                harmonized_df = harmonized_df.with_columns(pl.col(age_source).alias("age"))
+                mapping_log[age_source] = "age"
+            else:
+                # Minimal fallback for waves without config
+                for fallback_col in ["DEM_AGE", "K10", "B4K10", "K9"]:
+                    if fallback_col in df.columns:
+                        harmonized_df = harmonized_df.with_columns(pl.col(fallback_col).alias("age"))
+                        mapping_log[fallback_col] = "age (fallback)"
+                        break
+
+        # Use JENISKEGIA for work status classification
+        # JENISKEGIA is BPS pre-calculated employment status variable
+        # Available in: 2023-02, 2023-08, 2024-02, 2025-02
+        # Values: 1=Employed, 2=Unemployed, 4=School, 5=Housework, 6=Other
+        if "JENISKEGIA" in df.columns:
             harmonized_df = harmonized_df.with_columns(
-                pl.when(pl.col("R10A") == 1)
-                .then(1)  # Working
-                .when((pl.col("R10A") == 2) & (pl.col("R11") == 1))
-                .then(2)  # Unemployed (not working but seeking work)
-                .when((pl.col("R10A") == 2) & (pl.col("R11") == 2))
-                .then(3)  # Not in labor force (not working, not seeking)
-                .otherwise(None)
-                .alias("work_status")
+                pl.col("JENISKEGIA").alias("work_status")
             )
-            mapping_log["R10A+R11"] = "work_status"
+            mapping_log["JENISKEGIA"] = "work_status"
+
+        # Note: 2024-08 wave is under investigation for work status derivation
+        # Production waves: 2023-02, 2023-08, 2024-02, 2025-02
 
         # create case-insensitive column lookup
         column_map = {col.lower(): col for col in df.columns}
@@ -449,10 +519,17 @@ class SurveyHarmonizer:
         # Handle different ways of determining employment status
         # For modern SAKERNAS (2021+): work_status column
         if "work_status" in df.columns:
-            # BPS work status codes:
+            # BPS work status codes (B5R1):
             # 1 = Bekerja (Working)
             # 2 = Pernah bekerja tetapi sedang tidak bekerja (Had work but temporarily not working)
             # 3 = Sekolah (School)
+            # 4 = Mengurus rumah tangga (Housekeeping)
+            # 5 = Lainnya (Other)
+            # 6 = Tidak mampu bekerja (Unable to work)
+            #
+            # JENISKEGIA codes (2023-2025 format):
+            # 1 = Bekerja (Working)
+            # 2 = Pengangguran (Unemployed) - DIFFERENT from B5R1!
             # 4 = Mengurus rumah tangga (Housekeeping)
             # 5 = Lainnya (Other)
             # 6 = Tidak mampu bekerja (Unable to work)
@@ -463,12 +540,15 @@ class SurveyHarmonizer:
             if col_dtype in [pl.Float64, pl.Float32, pl.Int64, pl.Int32, pl.Decimal]:
                 # Numeric codes - most common in modern data
                 # Status 1 = Bekerja (Working) - clearly employed
-                # Status 2 = Temporarily not working - could be unemployed if looking for work
+                # Status 2 = JENISKEGIA: Unemployed OR B5R1: Temporarily not working
+                # We'll handle the distinction later
                 result_df = result_df.with_columns(
                     [
                         pl.col("work_status").is_in([1]).alias("employed"),
-                        pl.col("work_status").is_in([3, 4, 5, 6]).alias("not_working"),
-                        pl.col("work_status").is_in([2]).alias("temp_not_working"),
+                        pl.col("work_status").is_in([4, 5, 6]).alias("not_working"),
+                        pl.col("work_status")
+                        .is_in([2])
+                        .alias("status_2"),  # ambiguous - handle below
                     ]
                 )
             else:
@@ -487,43 +567,78 @@ class SurveyHarmonizer:
                     ]
                 )
 
-            # For unemployment, need to check job seeking status
-            # Use canonical name first, fallback to raw column names
-            job_seeking_col = None
-            if "looking_for_work" in df.columns:
-                job_seeking_col = "looking_for_work"
-            elif "SRH_KERJA" in df.columns:
-                job_seeking_col = "SRH_KERJA"
-            elif "B5R17" in df.columns:  # Older waves might use this
-                job_seeking_col = "B5R17"
+            # Handle status code 2 - different meaning depending on source
+            # If JENISKEGIA: code 2 = Pengangguran (directly unemployed)
+            # If B5R1: code 2 = temporarily not working (need job seeking check)
+            #
+            # Heuristic: JENISKEGIA doesn't have code 3 (Sekolah), B5R1 does
+            has_code_3 = False
+            if "work_status" in df.columns:
+                has_code_3 = df.filter(pl.col("work_status") == 3).height > 0
 
-            if job_seeking_col:
-                # Check if job_seeking_col is numeric or string
-                col_dtype = result_df[job_seeking_col].dtype
-
-                if col_dtype in [pl.Int32, pl.Int64, pl.Float32, pl.Float64]:
-                    # Numeric comparison
-                    seeking_condition = pl.col(job_seeking_col) == 1
-                    not_seeking_condition = pl.col(job_seeking_col) != 1
+            if "status_2" in result_df.columns:
+                if not has_code_3:
+                    # JENISKEGIA format: code 2 = unemployed directly
+                    #
+                    # KNOWN LIMITATION (2023-02, 2024-02):
+                    # =====================================
+                    # BPS unemployment definition (ILO 19th ICLS standards) includes:
+                    # 1. Without work during reference week
+                    # 2. Currently available for work
+                    # 3. Seeking work OR waiting to start a job/business
+                    #
+                    # JENISKEGIA=2 ("Pengangguran") captures actively job-seeking unemployed,
+                    # but appears to exclude:
+                    # - Those waiting to start a new job (have offer, waiting start date)
+                    # - Those preparing to start a business (made preparations, waiting to begin)
+                    #
+                    # This causes ~2-3pp underestimation in 2023-02 (3.1% vs 5.45% official)
+                    # and 2024-02 (2.1% vs 4.82% official). The issue is resolved in 2025-02
+                    # (4.76% matches official 4.76%).
+                    #
+                    # Root cause: Survey questionnaire flow in 2023-02/2024-02 does not
+                    # have accessible columns to identify "waiting to start" categories.
+                    # R10 (worked last week) is sparsely populated.
+                    # R22A-R25 are only answered by employed seeking additional work.
+                    #
+                    # Users should be aware of this systematic undercount in historical data.
+                    result_df = result_df.with_columns(pl.col("status_2").alias("unemployed"))
                 else:
-                    # String comparison - check for "Ya" or similar affirmative values
-                    seeking_condition = pl.col(job_seeking_col).str.starts_with("Ya")
-                    not_seeking_condition = ~pl.col(job_seeking_col).str.starts_with("Ya")
+                    # B5R1 format: code 2 = temp not working, check job seeking
+                    job_seeking_col = None
+                    if "looking_for_work" in df.columns:
+                        job_seeking_col = "looking_for_work"
+                    elif "SRH_KERJA" in df.columns:
+                        job_seeking_col = "SRH_KERJA"
+                    elif "B5R17" in df.columns:
+                        job_seeking_col = "B5R17"
 
-                # Unemployed = (not working OR temporarily not working) AND actively seeking work
-                result_df = result_df.with_columns(
-                    ((~pl.col("employed") | pl.col("temp_not_working")) & seeking_condition).alias(
-                        "unemployed"
-                    )
-                )
+                    if job_seeking_col:
+                        # Check if job_seeking_col is numeric or string
+                        col_dtype = result_df[job_seeking_col].dtype
 
-                # Update employed to include temp_not_working who are NOT looking for work
-                result_df = result_df.with_columns(
-                    pl.when(pl.col("temp_not_working") & not_seeking_condition)
-                    .then(True)
-                    .otherwise(pl.col("employed"))
-                    .alias("employed")
-                )
+                        if col_dtype in [pl.Int32, pl.Int64, pl.Float32, pl.Float64]:
+                            seeking_condition = pl.col(job_seeking_col) == 1
+                            not_seeking_condition = pl.col(job_seeking_col) != 1
+                        else:
+                            seeking_condition = pl.col(job_seeking_col).str.starts_with("Ya")
+                            not_seeking_condition = ~pl.col(job_seeking_col).str.starts_with("Ya")
+
+                        # Unemployed = temporarily not working AND actively seeking work
+                        result_df = result_df.with_columns(
+                            (pl.col("status_2") & seeking_condition).alias("unemployed")
+                        )
+
+                        # Update employed to include temp_not_working who are NOT looking for work
+                        result_df = result_df.with_columns(
+                            pl.when(pl.col("status_2") & not_seeking_condition)
+                            .then(True)
+                            .otherwise(pl.col("employed"))
+                            .alias("employed")
+                        )
+                    else:
+                        # No job seeking column, can't determine unemployment from B5R1
+                        result_df = result_df.with_columns(pl.lit(False).alias("unemployed"))
             else:
                 result_df = result_df.with_columns(pl.lit(False).alias("unemployed"))
 

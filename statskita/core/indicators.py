@@ -8,6 +8,33 @@ import polars as pl
 from .survey import SurveyDesign, SurveyEstimate
 
 
+# indicator priority order for table display
+INDICATOR_PRIORITY = [
+    "labor_force_participation_rate",
+    "employment_rate",
+    "unemployment_rate",
+    "underemployment_rate",
+    "inactivity_rate",
+    "female_labor_force_participation_rate",
+    "average_wage",
+    "neet_rate",
+    "informal_employment_rate",
+]
+
+# indicator units for display
+INDICATOR_UNITS = {
+    "labor_force_participation_rate": "%",
+    "employment_rate": "%",
+    "unemployment_rate": "%",
+    "underemployment_rate": "%",
+    "inactivity_rate": "%",
+    "female_labor_force_participation_rate": "%",
+    "neet_rate": "%",
+    "informal_employment_rate": "%",
+    "average_wage": "M Rp",  # millions of Rupiah
+}
+
+
 @dataclass
 class IndicatorResult:
     """Result container for calculated indicators."""
@@ -800,14 +827,15 @@ def format_indicators_as_table(
             estimate = result.estimate
 
             # Format estimate based on indicator type
-            # Average wage should show as full number, not scientific notation
             if indicator_name in ["average_wage", "rata_rata_upah"]:
-                estimate_val = estimate.value  # Keep full precision for wages
+                # format wage in millions for readability
+                estimate_val = round(estimate.value / 1_000_000, 2)  # convert to millions
             else:
-                estimate_val = round(estimate.value, 2)  # Round percentages
+                estimate_val = round(estimate.value, 2)  # percentages
 
             row = {
                 "indicator": indicator_name,
+                "unit": INDICATOR_UNITS.get(indicator_name, ""),
                 "estimate": estimate_val,
             }
 
@@ -855,11 +883,16 @@ def format_indicators_as_table(
 
     df = pl.DataFrame(rows)
 
-    # Sort by indicator name for consistent output
-    sort_cols = ["indicator"]
-    if "domain" in df.columns:
-        sort_cols.append("domain")
-    df = df.sort(sort_cols)
+    # sort by priority order then domain
+    def get_priority(indicator_name):
+        try:
+            return INDICATOR_PRIORITY.index(indicator_name)
+        except ValueError:
+            return 999
+
+    df = df.with_columns(
+        pl.col("indicator").map_elements(get_priority, return_dtype=pl.Int32).alias("_priority")
+    ).sort(["_priority"] + (["domain"] if "domain" in df.columns else [])).drop("_priority")
 
     # Add a print method as a convenience
     def print_table():

@@ -27,11 +27,17 @@ def test_loader_initialization():
     loader = SakernasLoader()
     assert loader is not None
 
-    # check config loading
-    loader._load_config(wave="2025_02")
-    config = loader.get_config()
-    assert config is not None
-    assert "fields" in config
+    # check config loading for all available waves
+    available_waves = ["2024-02", "2024-08", "2025-02"]
+
+    for wave in available_waves:
+        loader._load_config(wave=wave)
+        config = loader.get_config()
+        assert config is not None
+        assert "dataset" in config
+        assert config["dataset"] == "sakernas"
+        assert "wave" in config
+        assert config["wave"] == wave
 
 
 def test_list_categories():
@@ -39,7 +45,7 @@ def test_list_categories():
     from statskita.loaders.sakernas import SakernasLoader
 
     loader = SakernasLoader()
-    loader._load_config(wave="2025_02")
+    loader._load_config(wave="2025-02")
 
     categories = loader.list_categories()
     assert isinstance(categories, list)
@@ -52,7 +58,7 @@ def test_describe_variable():
     from statskita.loaders.sakernas import SakernasLoader
 
     loader = SakernasLoader()
-    loader._load_config(wave="2025_02")
+    loader._load_config(wave="2025-02")
 
     # describe specific variable
     info = loader.describe("DEM_AGE")
@@ -66,14 +72,16 @@ def test_survey_design_creation():
     from statskita.core.survey import SurveyDesign
 
     # create minimal dummy data
-    df = pl.DataFrame({
-        "id": [1, 2, 3, 4, 5],
-        "weight": [1.0, 1.5, 1.2, 1.0, 1.3],
-        "strata": [1, 1, 2, 2, 3],
-        "psu": [1, 1, 2, 2, 3],
-        "age": [25, 30, 35, 40, 45],
-        "employed": [True, True, False, True, False]
-    })
+    df = pl.DataFrame(
+        {
+            "id": [1, 2, 3, 4, 5],
+            "weight": [1.0, 1.5, 1.2, 1.0, 1.3],
+            "strata": [1, 1, 2, 2, 3],
+            "psu": [1, 1, 2, 2, 3],
+            "age": [25, 30, 35, 40, 45],
+            "employed": [True, True, False, True, False],
+        }
+    )
 
     # create design
     design = SurveyDesign(df, weight_col="weight", strata_col="strata", psu_col="psu")
@@ -83,7 +91,7 @@ def test_survey_design_creation():
     assert design.psu_col == "psu"
 
     # get summary
-    summary = design.get_design_summary()
+    summary = design.summary()
     assert "sample_size" in summary
     assert summary["sample_size"] == 5
 
@@ -96,10 +104,7 @@ def test_wrangler_initialization():
     assert wrangler is not None
 
     # test with dummy data
-    df = pl.DataFrame({
-        "age": [15, 20, 25, 30, 65],
-        "weight": [1.0, 1.0, 1.0, 1.0, 1.0]
-    })
+    df = pl.DataFrame({"age": [15, 20, 25, 30, 65], "weight": [1.0, 1.0, 1.0, 1.0, 1.0]})
 
     # basic wrangling
     result = wrangler.wrangle(df, min_working_age=15)
@@ -113,15 +118,17 @@ def test_indicator_calculation_dummy():
     from statskita.core.survey import SurveyDesign
 
     # create dummy data
-    df = pl.DataFrame({
-        "weight": [1.0] * 10,
-        "strata": [1] * 5 + [2] * 5,
-        "psu": list(range(1, 11)),
-        "age": [25, 30, 35, 40, 45, 50, 55, 60, 20, 22],
-        "working_age_population": [True] * 10,
-        "employed": [True, True, False, True, False, True, True, False, True, True],
-        "in_labor_force": [True, True, True, True, True, True, True, False, True, True]
-    })
+    df = pl.DataFrame(
+        {
+            "weight": [1.0] * 10,
+            "strata": [1] * 5 + [2] * 5,
+            "psu": list(range(1, 11)),
+            "age": [25, 30, 35, 40, 45, 50, 55, 60, 20, 22],
+            "working_age_population": [True] * 10,
+            "employed": [True, True, False, True, False, True, True, False, True, True],
+            "in_labor_force": [True, True, True, True, True, True, True, False, True, True],
+        }
+    )
 
     # create design
     design = SurveyDesign(df, weight_col="weight")

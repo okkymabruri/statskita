@@ -20,17 +20,6 @@ def test_sakernas_loader_init():
     # loader itself doesn't have dataset_name, it's in the metadata after loading
 
 
-def test_sakernas_config():
-    """Test that loader can load configuration."""
-    loader = SakernasLoader()
-    loader._load_config(wave="2025_02")
-
-    config = loader.get_config()
-    assert config is not None
-    assert "fields" in config
-    # fields contains individual field definitions, not categories
-
-
 def test_harmonizer_init():
     """Test SurveyHarmonizer initialization."""
     harmonizer = SurveyHarmonizer("sakernas")
@@ -43,10 +32,12 @@ def test_harmonizer_with_dummy_data():
     harmonizer = SurveyHarmonizer("sakernas")
 
     # minimal dummy data
-    df = pl.DataFrame({
-        "PROV": [11, 12],
-        "B4K5": [25, 30]  # age field
-    })
+    df = pl.DataFrame(
+        {
+            "PROV": [11, 12],
+            "B4K5": [25, 30],  # age field
+        }
+    )
 
     # harmonize
     result, log = harmonizer.harmonize(df, "2025")

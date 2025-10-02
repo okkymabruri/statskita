@@ -53,7 +53,21 @@ def load_config_with_inheritance(config_path: Path) -> Dict[str, Any]:
 
             # merge overrides if present
             if "overrides" in config:
-                merged = deep_merge(base_config, config["overrides"])
+                # start with base config
+                merged = base_config.copy()
+
+                # merge overrides into fields section if it exists
+                if "fields" in merged:
+                    for field_name, field_overrides in config["overrides"].items():
+                        if field_name in merged["fields"]:
+                            # update existing field
+                            merged["fields"][field_name] = deep_merge(
+                                merged["fields"][field_name], field_overrides
+                            )
+                        else:
+                            # add new field
+                            merged["fields"][field_name] = field_overrides
+
                 # keep non-override fields from wave config
                 for key in config:
                     if key not in ["extends", "overrides"]:

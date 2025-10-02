@@ -8,14 +8,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "aenum"
-version = "3.1.16"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e3/52/6ad8f63ec8da1bf40f96996d25d5b650fdd38f5975f8c813732c47388f18/aenum-3.1.16-py3-none-any.whl", hash = "sha256:9035092855a98e41b66e3d0998bd7b96280e85ceb3a04cc035636138a1943eaf", size = 165627, upload-time = "2025-04-25T03:17:58.89Z" },
-]
-
-[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -584,18 +576,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a9/95/a3dbbb5028f35eafb79008e7522a75244477d2838f38cbb722248dabc2a8/cycler-0.12.1.tar.gz", hash = "sha256:88bb128f02ba341da8ef447245a9e138fae777f6a23943da4540077d3601eb1c", size = 7615, upload-time = "2023-10-07T05:32:18.335Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl", hash = "sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30", size = 8321, upload-time = "2023-10-07T05:32:16.783Z" },
-]
-
-[[package]]
-name = "dbf"
-version = "0.99.11"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "aenum" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0d/8e/ea5c3caa47a708f2a69cd2b8228bd590c592e2edf6f810b30d42d1e9435b/dbf-0.99.11.tar.gz", hash = "sha256:2169c05252c0efbe897f346f0683326ec25854beab1d0c6430df6e903a57b315", size = 104747, upload-time = "2025-09-02T20:07:49.156Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ab/95/d42256fd40584bf62a83ac8d9fb34d0a130c01dad4b0bc345f7fe0798748/dbf-0.99.11-py3-none-any.whl", hash = "sha256:0caeaeee80c486b7422a6e25cdc7da61dd0007fe652a005b2bdf1b1dd0b18e00", size = 110038, upload-time = "2025-09-02T20:07:45.397Z" },
 ]
 
 [[package]]
@@ -1814,15 +1794,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pathlib"
-version = "1.0.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ac/aa/9b065a76b9af472437a0059f77e8f962fe350438b927cb80184c32f075eb/pathlib-1.0.1.tar.gz", hash = "sha256:6940718dfc3eff4258203ad5021090933e5c04707d5ca8cc9e73c94a7894ea9f", size = 49298, upload-time = "2014-09-03T15:41:57.18Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/f9/690a8600b93c332de3ab4a344a4ac34f00c8f104917061f779db6a918ed6/pathlib-1.0.1-py3-none-any.whl", hash = "sha256:f35f95ab8b0f59e6d354090350b44a80a80635d22efdedfa84c7ad1cf0a74147", size = 14363, upload-time = "2022-05-04T13:37:20.585Z" },
-]
-
-[[package]]
 name = "pathspec"
 version = "0.12.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2820,11 +2791,8 @@ name = "statskita"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "dbf" },
     { name = "dbfrs" },
-    { name = "openpyxl" },
     { name = "pandas" },
-    { name = "pathlib" },
     { name = "polars" },
     { name = "pyarrow" },
     { name = "pydantic" },
@@ -2866,6 +2834,7 @@ viz = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "openpyxl" },
     { name = "pytest" },
     { name = "ruff" },
     { name = "twine" },
@@ -2873,7 +2842,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "dbf", specifier = ">=0.99.11" },
     { name = "dbfrs", specifier = ">=0.1.5" },
     { name = "ipykernel", marker = "extra == 'notebook'", specifier = ">=6.0.0" },
     { name = "matplotlib", marker = "extra == 'notebook'", specifier = ">=3.6.0" },
@@ -2882,9 +2850,7 @@ requires-dist = [
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.0.0" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'", specifier = ">=0.22.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.0" },
-    { name = "openpyxl", specifier = ">=3.1.0" },
     { name = "pandas", specifier = ">=2.3.2" },
-    { name = "pathlib", specifier = ">=1.0.0" },
     { name = "polars", specifier = ">=0.20.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pyarrow", specifier = ">=10.0.0" },
@@ -2908,6 +2874,7 @@ provides-extras = ["viz", "notebook", "dev", "cli", "docs"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "ruff", specifier = ">=0.13.2" },
     { name = "twine", specifier = ">=6.2.0" },

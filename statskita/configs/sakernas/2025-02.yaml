@@ -1,0 +1,57 @@
+dataset: sakernas
+version: '1.0'
+wave: 2025-02
+extends: base.yaml
+metadata:
+  reference_period: February 2025
+  sample_design: Two-stage stratified sampling
+  coverage: All 38 provinces and 514 districts/cities
+  age_coverage: 15 years and above
+  icls_version: 19th ICLS (2013)
+  occupation_classification: KBJI 2014
+  industry_classification: KBLI 2020
+  education_classification: ISCED-2011 aligned
+overrides:
+  # Essential overrides for proper codelist application
+  DEM_AGE:
+    canon_name: age
+    label: "Age"
+  WKT_JML_U:
+    canon_name: hours_worked
+    label: "Total hours worked per week (main job)"
+  MJJ_UPAH_U:
+    canon_name: wage_cash
+    label: "Cash wage per month (main job)"
+  KODE_PROV:
+    canon_name: province_code
+    codelist: province_codes
+  DEM_SEX:
+    canon_name: gender
+    codelist: gender
+  DEM_EDL:
+    canon_name: education_level
+    codelist: education_level
+  DEM_SKLH:
+    canon_name: school_participation
+    codelist: school_attendance
+  KLASIFIKAS:
+    canon_name: urban_rural
+    codelist: urban_rural
+  MJJ_KATEGO:
+    canon_name: industry_sector
+    codelist: industry_categories
+  MJJ_EMPREL:
+    canon_name: status_pekerjaan
+    codelist: job_status
+  MIG_CTZ:
+    canon_name: citizenship
+    codelist: citizenship
+  DIF_SIGHT:
+    canon_name: difficulty_seeing
+    codelist: difficulty_levels
+  DIF_HEAR:
+    canon_name: difficulty_hearing
+    codelist: difficulty_levels
+  DIF_MOBI:
+    canon_name: difficulty_mobility
+    codelist: difficulty_levels

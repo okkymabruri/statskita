@@ -1,0 +1,18 @@
+dataset: sakernas
+version: '1.0'
+wave: 2024-08
+extends: base.yaml
+metadata:
+  reference_period: August 2024
+  sample_design: Two-stage stratified sampling
+  coverage: All 38 provinces and 514 districts/cities
+  age_coverage: 15 years and above
+  icls_version: 19th ICLS (2013)
+  occupation_classification: KBJI 2014
+  industry_classification: KBLI 2020
+  education_classification: ISCED-2011 aligned
+overrides:
+  K4:
+    canon_name: gender
+    label: "Gender"
+    codelist: gender

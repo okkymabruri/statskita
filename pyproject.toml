@@ -95,6 +95,7 @@ indent-style = "space"
 
 [dependency-groups]
 dev = [
+    "openpyxl>=3.1.5",
     "pytest>=8.4.2",
     "ruff>=0.13.2",
     "twine>=6.2.0",

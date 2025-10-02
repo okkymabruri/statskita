@@ -7,7 +7,6 @@ import polars as pl
 
 from .survey import SurveyDesign, SurveyEstimate
 
-
 # indicator priority order for table display
 INDICATOR_PRIORITY = [
     "labor_force_participation_rate",

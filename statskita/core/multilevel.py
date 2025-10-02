@@ -3,7 +3,7 @@ Multi-level grouped analysis for survey indicators.
 Enables hierarchical analysis like unemployment by province and gender.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
 import polars as pl
 

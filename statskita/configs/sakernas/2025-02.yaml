@@ -16,6 +16,12 @@ overrides:
   DEM_AGE:
     canon_name: age
     label: "Age"
+  WKT_JML_U:
+    canon_name: hours_worked
+    label: "Total hours worked per week (main job)"
+  MJJ_UPAH_U:
+    canon_name: wage_cash
+    label: "Cash wage per month (main job)"
   KODE_PROV:
     canon_name: province_code
     codelist: province_codes

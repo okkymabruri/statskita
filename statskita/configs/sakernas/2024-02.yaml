@@ -27,3 +27,9 @@ overrides:
     canon_name: work_status
     label: "Employment Status"
     codelist: activity_type
+  B5R18A_JML:
+    canon_name: hours_worked
+    label: "Total hours worked per week"
+  B5R15_1:
+    canon_name: wage_cash
+    label: "Cash wage per month"

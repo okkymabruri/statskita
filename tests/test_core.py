@@ -11,7 +11,7 @@ def test_imports():
 
     # check version
     assert hasattr(statskita, "__version__")
-    assert statskita.__version__ == "0.1.0"
+    assert statskita.__version__ == "0.2.0"
 
     # check main functions exist
     assert callable(load_sakernas)

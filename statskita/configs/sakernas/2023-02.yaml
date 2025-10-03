@@ -5,7 +5,8 @@ extends: defaults.yaml
 metadata:
   reference_period: February 2023
   sample_design: Two-stage stratified sampling
-  coverage: All 34 provinces
+  coverage: 34 provinces
+  geographic_level: provincial
   age_coverage: 15 years and above
   icls_version: 19th ICLS (2013)
   occupation_classification: KBJI 2014

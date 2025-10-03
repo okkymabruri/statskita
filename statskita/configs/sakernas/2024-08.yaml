@@ -5,7 +5,8 @@ extends: base.yaml
 metadata:
   reference_period: August 2024
   sample_design: Two-stage stratified sampling
-  coverage: All 38 provinces and 514 districts/cities
+  coverage: 38 provinces, 514 districts/cities
+  geographic_level: district
   age_coverage: 15 years and above
   icls_version: 19th ICLS (2013)
   occupation_classification: KBJI 2014

@@ -1,4 +1,4 @@
-# StatsKita: Python toolkit for Indonesian official microdata (SAKERNAS)
+# StatsKita: Python toolkit for Indonesian official microdata (SAKERNAS, SUSENAS)
 
 [![PyPI version](https://badge.fury.io/py/statskita.svg)](https://pypi.org/project/statskita/)
 [![PyPI Downloads](https://static.pepy.tech/badge/statskita)](https://pepy.tech/projects/statskita)
@@ -6,11 +6,13 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **v0.2.0 (beta)**: Multi-wave analysis with 100% validation. Production-ready for 4 waves (2023-02 to 2025-02).
+> **v0.2.0 (beta)**: Multi-wave analysis with 100% validation. Production-ready for 4 SAKERNAS waves (2023-02 to 2025-02).
 
 ## TL;DR
 
-Python toolkit for SAKERNAS labor force survey data with multi-wave analysis.
+Python toolkit for Indonesian official microdata (SAKERNAS, SUSENAS, PODES, and more) with survey-aware analysis.
+
+**Currently supported**: SAKERNAS labor force survey with multi-wave analysis.
 
 ## Quick Start
 

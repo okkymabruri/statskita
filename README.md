@@ -1,6 +1,12 @@
 # StatsKita: Python toolkit for Indonesian official microdata (SAKERNAS)
 
-> **v0.2.0-beta**: Multi-wave analysis with 100% validation. Production-ready for 4 waves (2023-02 to 2025-02).
+[![PyPI version](https://badge.fury.io/py/statskita.svg)](https://pypi.org/project/statskita/)
+[![PyPI Downloads](https://static.pepy.tech/badge/statskita)](https://pepy.tech/projects/statskita)
+[![Build Status](https://github.com/okkymabruri/statskita/actions/workflows/ci.yml/badge.svg)](https://github.com/okkymabruri/statskita/actions)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **v0.2.0 (beta)**: Multi-wave analysis with 100% validation. Production-ready for 4 waves (2023-02 to 2025-02).
 
 ## TL;DR
 

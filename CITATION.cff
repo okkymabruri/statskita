@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use StatsKita, please cite it as below."
 title: "StatsKita: Python Toolkit for Indonesian Official Microdata (SAKERNAS)"
 version: 0.2.0
-date-released: 2025-09-28
+date-released: 2025-10-02
 authors:
   - family-names: "Mabruri"
     given-names: "Okky"

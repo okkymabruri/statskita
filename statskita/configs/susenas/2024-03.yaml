@@ -1,0 +1,86 @@
+dataset: susenas
+version: '1.0'
+wave: 2024-03
+extends: defaults.yaml
+
+metadata:
+  reference_period: March 2024
+  sample_design: Two-stage stratified sampling
+  coverage: 38 provinces, 514 districts/cities
+  geographic_level: district
+  age_coverage: All ages
+  poverty_reference: true
+
+modules:
+  kor:
+    description: Household Core
+    tables:
+      rt:
+        file: ssn202403_kor_rt.dbf
+        level: household
+        primary_key: URUT
+      ind1:
+        file: ssn202403_kor_ind1.dbf
+        level: individual
+        primary_key: [URUT, R401]
+      ind2:
+        file: ssn202403_kor_ind2.dbf
+        level: individual
+        primary_key: [URUT, R401]
+      mig:
+        file: ssn202403_kor_mig.dbf
+        level: individual
+        primary_key: [URUT, R401]
+
+  kp:
+    description: Consumption
+    categories:
+      food:
+        files:
+          - ssn202403_kp_blok41_11_31.dbf
+          - ssn202403_kp_blok41_32_36.dbf
+          - ssn202403_kp_blok41_51_97.dbf
+        primary_key: [URUT, KODE]
+      nonfood:
+        files:
+          - ssn202403_kp_blok42_11_31.dbf
+          - ssn202403_kp_blok42_32_36.dbf
+          - ssn202403_kp_blok42_51_97.dbf
+        primary_key: [URUT, KODE]
+      housing:
+        file: ssn202403_kp_blok43.dbf
+        primary_key: URUT
+
+survey_design:
+  weight_var: FWT
+  strata_var: STRATA
+  psu_var: PSU
+  ssu_var: SSU
+
+overrides:
+  URUT:
+    canon_name: household_id
+    label: "Household ID"
+  R101:
+    canon_name: province_code
+    label: "Province"
+    codelist: province_codes
+  R102:
+    canon_name: regency_code
+    label: "Regency/City"
+  R105:
+    canon_name: urban_rural
+    label: "Urban/Rural"
+    codelist: urban_rural
+  R401:
+    canon_name: person_number
+    label: "Person number in household"
+  FWT:
+    canon_name: household_weight
+    label: "Household weight"
+  WI1:
+    canon_name: weight_individual_1
+    label: "Individual weight 1"
+  WI2:
+    canon_name: weight_individual_2
+    label: "Individual weight 2"

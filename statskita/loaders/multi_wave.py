@@ -301,7 +301,9 @@ def calculate_indicators_multi(
         else:
             # simple pivot
             pivot_on = "wave"
-            index_cols = ["indicator", "unit"] if "unit" in combined_results.columns else "indicator"
+            index_cols = (
+                ["indicator", "unit"] if "unit" in combined_results.columns else "indicator"
+            )
 
         wide_results = combined_results.pivot(
             values="estimate", index=index_cols, on=pivot_on, aggregate_function="first"
@@ -378,7 +380,9 @@ def compare_waves(
     else:
         index_cols = ["indicator"]
 
-    wave_cols = [col for col in wide_df.columns if col not in index_cols and not col.endswith("_se")]
+    wave_cols = [
+        col for col in wide_df.columns if col not in index_cols and not col.endswith("_se")
+    ]
 
     # sort wave columns
     if wave_order:
@@ -393,9 +397,7 @@ def compare_waves(
         wave1, wave2 = wave_cols[0], wave_cols[1]
 
         # calculate change
-        result = wide_df.with_columns(
-            [(pl.col(wave2) - pl.col(wave1)).alias("change")]
-        )
+        result = wide_df.with_columns([(pl.col(wave2) - pl.col(wave1)).alias("change")])
 
         # select and order columns
         output_cols = index_cols + [wave1, wave2, "change"]

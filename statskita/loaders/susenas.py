@@ -15,34 +15,29 @@ from .base import BaseLoader, DatasetMetadata, SurveyDesignInfo
 
 
 class SusenasLoader(BaseLoader):
-    """Loader for SUSENAS (Socioeconomic Survey) data files.
-
-    SUSENAS has multi-file structure:
-    - KOR module: 4 files (rt, ind1, ind2, mig)
-    - KP module: 7 files (food, nonfood, housing consumption)
-    """
+    """Loader for SUSENAS (Socioeconomic Survey) data files."""
 
     FILE_PATTERNS = {
-        '2024-03': {
-            'kor': {
-                'rt': 'ssn202403_kor_rt.dbf',
-                'ind1': 'ssn202403_kor_ind1.dbf',
-                'ind2': 'ssn202403_kor_ind2.dbf',
-                'mig': 'ssn202403_kor_mig.dbf',
+        "2024-03": {
+            "kor": {
+                "rt": "ssn202403_kor_rt.dbf",
+                "ind1": "ssn202403_kor_ind1.dbf",
+                "ind2": "ssn202403_kor_ind2.dbf",
+                "mig": "ssn202403_kor_mig.dbf",
             },
-            'kp': {
-                'food': [
-                    'ssn202403_kp_blok41_11_31.dbf',
-                    'ssn202403_kp_blok41_32_36.dbf',
-                    'ssn202403_kp_blok41_51_97.dbf',
+            "kp": {
+                "food": [
+                    "ssn202403_kp_blok41_11_31.dbf",
+                    "ssn202403_kp_blok41_32_36.dbf",
+                    "ssn202403_kp_blok41_51_97.dbf",
                 ],
-                'nonfood': [
-                    'ssn202403_kp_blok42_11_31.dbf',
-                    'ssn202403_kp_blok42_32_36.dbf',
-                    'ssn202403_kp_blok42_51_97.dbf',
+                "nonfood": [
+                    "ssn202403_kp_blok42_11_31.dbf",
+                    "ssn202403_kp_blok42_32_36.dbf",
+                    "ssn202403_kp_blok42_51_97.dbf",
                 ],
-                'housing': 'ssn202403_kp_blok43.dbf',
-            }
+                "housing": "ssn202403_kp_blok43.dbf",
+            },
         }
     }
 
@@ -56,29 +51,23 @@ class SusenasLoader(BaseLoader):
     def load(
         self,
         file_path: Union[str, Path, None] = None,
-        module: Literal['kor', 'kp', 'both'] = 'kor',
-        table: Optional[Literal['rt', 'ind1', 'ind2', 'mig']] = None,
-        category: Optional[Literal['food', 'nonfood', 'housing', 'all']] = None,
+        module: Literal["kor", "kp", "both"] = "kor",
+        table: Optional[Literal["rt", "ind1", "ind2", "mig"]] = None,
+        category: Optional[Literal["food", "nonfood", "housing", "all"]] = None,
         merged: bool = True,
         wave: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> pl.DataFrame:
-        """Load SUSENAS data.
+        """Load SUSENAS data from DBF or Parquet files.
 
-        Args:
-            file_path: Path to data directory (if None, use SUSENAS_DATA_DIR from .env)
-            module: 'kor' (household/individual), 'kp' (consumption), or 'both'
-            table: For module='kor', specific table to load (if merged=False)
-            category: For module='kp', consumption category to load
-            merged: If True, auto-join related files
-            wave: Survey wave (e.g., '2024-03')
-            **kwargs: Extra options
+        KOR module has household data, KP module has consumption data.
+        Auto-detects file format and handles multi-file structure.
         """
         # determine data directory
         if file_path:
             self._data_dir = Path(file_path) if Path(file_path).is_dir() else Path(file_path).parent
         else:
-            data_dir_env = os.environ.get('SUSENAS_DATA_DIR')
+            data_dir_env = os.environ.get("SUSENAS_DATA_DIR")
             if not data_dir_env:
                 raise ValueError("file_path not provided and SUSENAS_DATA_DIR not set in .env")
             self._data_dir = Path(data_dir_env)
@@ -88,20 +77,20 @@ class SusenasLoader(BaseLoader):
 
         # detect wave if not provided
         if not wave:
-            wave = '2024-03'  # default for now
+            wave = "2024-03"  # default for now
 
         # load config
         self._load_config(wave)
 
         # load requested module(s)
-        if module == 'kor':
+        if module == "kor":
             df = self._load_kor_module(merged=merged, table=table)
-        elif module == 'kp':
-            df = self._load_kp_module(category=category or 'all')
-        elif module == 'both':
-            df_kor = self._load_kor_module(merged=True, table='rt')
-            df_kp = self._load_kp_module(category='housing')
-            df = df_kor.join(df_kp, on='URUT', how='left')
+        elif module == "kp":
+            df = self._load_kp_module(category=category or "all")
+        elif module == "both":
+            df_kor = self._load_kor_module(merged=True, table="rt")
+            df_kp = self._load_kp_module(category="housing")
+            df = df_kor.join(df_kp, on="URUT", how="left")
         else:
             raise ValueError(f"Invalid module: {module}")
 
@@ -125,30 +114,28 @@ class SusenasLoader(BaseLoader):
     def _load_kor_module(self, merged: bool, table: Optional[str]) -> pl.DataFrame:
         """Load KOR module (household/individual data)."""
         if not merged and table:
-            return self._load_dbf_file(self.FILE_PATTERNS['2024-03']['kor'][table])
+            return self._load_dbf_file(self.FILE_PATTERNS["2024-03"]["kor"][table])
 
         # load all KOR files
-        df_rt = self._load_dbf_file(self.FILE_PATTERNS['2024-03']['kor']['rt'])
+        df_rt = self._load_dbf_file(self.FILE_PATTERNS["2024-03"]["kor"]["rt"])
 
         if not merged:
             return df_rt
 
-        # for now, return household data only
-        # TODO: implement individual merge (ind1 + ind2)
         return df_rt
 
     def _load_kp_module(self, category: str) -> pl.DataFrame:
         """Load KP module (consumption data)."""
-        kp_files = self.FILE_PATTERNS['2024-03']['kp']
+        kp_files = self.FILE_PATTERNS["2024-03"]["kp"]
 
-        if category == 'food':
-            return self._load_and_stack(kp_files['food'])
-        elif category == 'nonfood':
-            return self._load_and_stack(kp_files['nonfood'])
-        elif category == 'housing':
-            return self._load_dbf_file(kp_files['housing'])
-        elif category == 'all':
-            df_housing = self._load_dbf_file(kp_files['housing'])
+        if category == "food":
+            return self._load_and_stack(kp_files["food"])
+        elif category == "nonfood":
+            return self._load_and_stack(kp_files["nonfood"])
+        elif category == "housing":
+            return self._load_dbf_file(kp_files["housing"])
+        elif category == "all":
+            df_housing = self._load_dbf_file(kp_files["housing"])
             return df_housing
         else:
             raise ValueError(f"Invalid category: {category}")
@@ -158,14 +145,14 @@ class SusenasLoader(BaseLoader):
         file_path = self._data_dir / filename
 
         # try parquet first (faster, no data quality issues)
-        parquet_path = file_path.with_suffix('.parquet')
+        parquet_path = file_path.with_suffix(".parquet")
         if parquet_path.exists():
             return pl.read_parquet(parquet_path)
 
         # check for matching parquet in -pq directory
-        if 'bps-susenas' in str(self._data_dir):
-            pq_dir = Path(str(self._data_dir).replace('bps-susenas', 'bps-susenas-pq'))
-            pq_file = pq_dir / file_path.with_suffix('.parquet').name
+        if "bps-susenas" in str(self._data_dir):
+            pq_dir = Path(str(self._data_dir).replace("bps-susenas", "bps-susenas-pq"))
+            pq_file = pq_dir / file_path.with_suffix(".parquet").name
             if pq_file.exists():
                 return pl.read_parquet(pq_file)
 
@@ -176,7 +163,7 @@ class SusenasLoader(BaseLoader):
         all_fields = dbfrs.get_dbf_fields(str(file_path))
 
         # skip known problematic fields with malformed numeric data
-        problematic = ['R1806B']
+        problematic = ["R1806B"]
         clean_fields = [f for f in all_fields if f.name not in problematic]
 
         # load with filtered fields
@@ -194,7 +181,7 @@ class SusenasLoader(BaseLoader):
             df = self._load_dbf_file(filename)
             dfs.append(df)
 
-        return pl.concat(dfs, how='vertical')
+        return pl.concat(dfs, how="vertical")
 
     def _load_config(self, wave: Optional[str] = None):
         """Load configuration from YAML files."""
@@ -234,22 +221,14 @@ class SusenasLoader(BaseLoader):
 
 def load_susenas(
     file_path: Union[str, Path, None] = None,
-    module: Literal['kor', 'kp', 'both'] = 'kor',
+    module: Literal["kor", "kp", "both"] = "kor",
     wave: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> pl.DataFrame:
     """Load SUSENAS socioeconomic survey data.
 
-    Args:
-        file_path: Path to data directory
-        module: 'kor' (household), 'kp' (consumption), or 'both'
-        wave: Survey wave (e.g., '2024-03')
-        **kwargs: Extra options
-
-    Example:
-        >>> df = sk.load_susenas(module='kor', wave='2024-03')
-        >>> print(f"Loaded {len(df):,} households")
+    Module options: 'kor' (household), 'kp' (consumption), or 'both'.
+    Uses SUSENAS_DATA_DIR environment variable if file_path not provided.
     """
     loader = SusenasLoader()
     return loader.load(file_path=file_path, module=module, wave=wave, **kwargs)
-

@@ -24,6 +24,7 @@ class DataWrangler:
         validate_weights: bool = True,
         create_indicators: bool = True,
         min_working_age: int = 15,
+        **kwargs,
     ) -> pl.DataFrame:
         """Wrangle survey data into analysis-ready format.
 
@@ -35,6 +36,13 @@ class DataWrangler:
             validate_weights: Check for invalid survey weights
             create_indicators: Generate labor force indicators
         """
+        if self.dataset_type == "susenas":
+            return self._wrangle_susenas(
+                df,
+                kp_food=kwargs.get("kp_food"),
+                kp_nonfood=kwargs.get("kp_nonfood"),
+                kp_summary=kwargs.get("kp_summary"),
+            )
         result_df = df.clone()
 
         # harmonize if needed
@@ -198,6 +206,120 @@ class DataWrangler:
             )
 
         return result_df
+
+    def _wrangle_susenas(
+        self,
+        kor_df: pl.DataFrame,
+        kp_food: Optional[pl.DataFrame] = None,
+        kp_nonfood: Optional[pl.DataFrame] = None,
+        kp_summary: Optional[pl.DataFrame] = None,
+    ) -> pl.DataFrame:
+        """Prepare SUSENAS household data with consumption indicators."""
+
+        if kp_food is None or kp_nonfood is None:
+            raise ValueError("SUSENAS wrangling requires kp_food and kp_nonfood DataFrames.")
+
+        # Step 1: Aggregate consumption data by household
+        food_agg = (
+            kp_food
+            .group_by("URUT")
+            .agg(pl.col("B41K10").sum().cast(pl.Float64).alias("food_weekly"))
+        )
+
+        nonfood_agg = (
+            kp_nonfood
+            .group_by("URUT")
+            .agg([
+                pl.col("B42K4").sum().cast(pl.Float64).alias("nonfood_monthly"),
+                pl.col("B42K5").sum().cast(pl.Float64).alias("nonfood_annual"),
+            ])
+        )
+
+        # Step 2: Join everything to household roster (kor_df is the source of truth)
+        result = (
+            kor_df
+            .join(food_agg, on="URUT", how="left")
+            .join(nonfood_agg, on="URUT", how="left")
+            .with_columns([
+                # Fill nulls for households with no consumption records
+                pl.col("food_weekly").fill_null(0.0),
+                pl.col("nonfood_monthly").fill_null(0.0),
+                pl.col("nonfood_annual").fill_null(0.0),
+            ])
+        )
+
+        # Step 3: Calculate per capita expenditure
+        result = result.with_columns([
+            # Basic household info from KOR
+            pl.col("R301").cast(pl.Float64).alias("household_size"),
+            pl.col("FWT").cast(pl.Float64).alias("survey_weight"),
+            pl.col("R105").cast(pl.Int32).alias("urban_rural"),
+            pl.col("R101").cast(pl.Int32).alias("province_code"),
+
+            # Calculate monthly expenditure
+            (pl.col("food_weekly") * 30/7).alias("food_monthly"),
+            (pl.col("nonfood_monthly") + pl.col("nonfood_annual")/12).alias("nonfood_total_monthly"),
+        ])
+
+        result = result.with_columns([
+            (pl.col("food_monthly") + pl.col("nonfood_total_monthly")).alias("total_monthly"),
+        ])
+
+        # Per capita values
+        result = result.with_columns([
+            (pl.col("total_monthly") / pl.col("household_size")).alias("per_capita_expenditure_calc"),
+            (pl.col("food_monthly") / pl.col("household_size")).alias("per_capita_food_calc"),
+        ])
+
+        # Step 4: If kp_summary available, use KAPITA when not null
+        if kp_summary is not None:
+            summary = kp_summary.select([
+                "URUT",
+                pl.col("KAPITA").cast(pl.Float64).alias("kapita_bps"),
+                pl.col("LEMAK_KAP").cast(pl.Float64).alias("fat_per_capita"),
+                pl.col("KARBO_KAP").cast(pl.Float64).alias("carbohydrate_per_capita"),
+            ])
+
+            result = result.join(summary, on="URUT", how="left")
+
+            # Use BPS KAPITA when available
+            result = result.with_columns([
+                pl.coalesce([pl.col("kapita_bps"), pl.col("per_capita_expenditure_calc")]).alias(
+                    "per_capita_expenditure"
+                ),
+            ])
+        else:
+            result = result.with_columns([
+                pl.col("per_capita_expenditure_calc").alias("per_capita_expenditure"),
+            ])
+
+        # Step 5: Rename per_capita_food_calc to per_capita_food for consistency
+        result = result.rename({"per_capita_food_calc": "per_capita_food"})
+
+        # Keep only needed columns
+        final_cols = [
+            "URUT",
+            "household_size",
+            "survey_weight",
+            "urban_rural",
+            "province_code",
+            "per_capita_expenditure",
+            "per_capita_food",
+            "PSU",
+            "SSU",
+            "STRATA",
+        ]
+
+        # Add nutrition if available
+        if kp_summary is not None:
+            final_cols.extend(["fat_per_capita", "carbohydrate_per_capita"])
+
+        # Keep original columns that might be needed
+        for col in ["R301", "R101", "R105", "FWT", "WERT", "WEIND"]:
+            if col in result.columns and col not in final_cols:
+                final_cols.append(col)
+
+        return result.select([c for c in final_cols if c in result.columns])
 
     def _find_column(self, df: pl.DataFrame, possible_names: List[str]) -> Optional[str]:
         for name in possible_names:

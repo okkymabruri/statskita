@@ -5,9 +5,13 @@ Full features planned for v0.4.0.
 """
 
 import os
+import warnings
 from typing import Dict, Optional, Tuple
 
 import requests
+from urllib3.exceptions import InsecureRequestWarning
+
+warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
 
 class BPSAPIClient:
@@ -20,9 +24,14 @@ class BPSAPIClient:
     """
 
     BASE_URL = "https://webapi.bps.go.id/v1/api"
+    PERIOD_CODES = {
+        "march": 61,
+        "september": 62,
+        "annual": 63,
+    }
 
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.environ.get('BPS_API_KEY')
+        self.api_key = api_key or os.environ.get("BPS_API_KEY")
         if not self.api_key:
             raise ValueError("BPS_API_KEY not found in environment or provided")
 
@@ -47,10 +56,17 @@ class BPSAPIClient:
         # map year to BPS year code
         year_code = year - 1900  # 2024 -> 124
 
+        try:
+            period_code = self.PERIOD_CODES[period.lower()]
+        except KeyError as exc:  # pragma: no cover - defensive guard
+            raise ValueError(
+                f"Unsupported period '{period}'. Expected one of {list(self.PERIOD_CODES)}"
+            ) from exc
+
         # var 195 = poverty line
         url = f"{self.BASE_URL}/list/model/data/lang/ind/domain/0000/var/195/th/{year_code}/key/{self.api_key}"
 
-        response = requests.get(url, timeout=30)
+        response = requests.get(url, params={"tur": period_code}, timeout=30, verify=False)
         response.raise_for_status()
 
         data = response.json()
@@ -70,11 +86,15 @@ class BPSAPIClient:
             if not prov_name:
                 continue
 
+            # enforce requested period (last two digits of key)
+            if not key.endswith(str(period_code)):
+                continue
+
             # determine urban/rural from key
-            if '430' in key:
-                category = 'urban'
-            elif '431' in key:
-                category = 'rural'
+            if "430" in key:
+                category = "urban"
+            elif "431" in key:
+                category = "rural"
             else:
                 continue
 
@@ -82,7 +102,6 @@ class BPSAPIClient:
             poverty_lines[(prov_name, category)] = float(value)
 
         return poverty_lines
-
 
 
 def fetch_poverty_lines(year: int = 2024, period: str = "march") -> Dict[Tuple[str, str], float]:

@@ -18,6 +18,11 @@ INDICATOR_PRIORITY = [
     "average_wage",
     "neet_rate",
     "informal_employment_rate",
+    "per_capita_expenditure",
+    "poverty_headcount",
+    "poverty_gap",
+    "poverty_severity",
+    "gini_coefficient",
 ]
 
 # indicator units for display
@@ -31,6 +36,11 @@ INDICATOR_UNITS = {
     "neet_rate": "%",
     "informal_employment_rate": "%",
     "average_wage": "M Rp",  # millions of Rupiah
+    "per_capita_expenditure": "Rp",
+    "poverty_headcount": "%",
+    "poverty_gap": "",
+    "poverty_severity": "",
+    "gini_coefficient": "",
 }
 
 
@@ -150,9 +160,7 @@ class IndicatorCalculator:
                 .otherwise(False)
                 .alias("in_lf"),
             ]
-        ).filter(
-            (pl.col("working_age")) & (pl.col("gender") == "PEREMPUAN")
-        )
+        ).filter((pl.col("working_age")) & (pl.col("gender") == "PEREMPUAN"))
 
         if len(df_working) == 0:
             return {}
@@ -663,6 +671,277 @@ class IndicatorCalculator:
 
         return results
 
+    def calculate_per_capita_expenditure_indicator(
+        self,
+        by: Optional[List[str]] = None,
+        confidence_level: float = 0.95,
+    ) -> Dict[str, IndicatorResult]:
+        """Weighted mean of monthly per-capita expenditure using KAPITA from blok43."""
+
+        # prioritize KAPITA from blok43
+        column = next(
+            (
+                col
+                for col in (
+                    "KAPITA",  # priority: BPS pre-calculated value
+                    "kapita",
+                    "per_capita_expenditure",
+                )
+                if col in self.data.columns
+            ),
+            None,
+        )
+        if column is None:
+            return {}
+
+        estimates = self.design.estimate_mean(column, by=by, confidence_level=confidence_level)
+
+        results: Dict[str, IndicatorResult] = {}
+        for domain, estimate in estimates.items():
+            results[domain] = IndicatorResult(
+                indicator_name="Average Per Capita Expenditure (SUSENAS)",
+                estimate=estimate,
+                domain=domain if domain != "overall" else None,
+                metadata={"unit": "Rupiah per month", "source": column},
+            )
+
+        return results
+
+    def calculate_poverty_headcount(
+        self,
+        by: Optional[List[str]] = None,
+        confidence_level: float = 0.95,
+        exclude_single_person: bool = False,
+    ) -> Dict[str, IndicatorResult]:
+        """Calculate poverty headcount rate (P0) using KAPITA from blok43."""
+
+        # import from indicators module
+        from ..indicators import calculate_poverty_headcount
+        from ..loaders.bps_api import fetch_poverty_lines
+
+        # check if this is SUSENAS data with KAPITA
+        if "KAPITA" not in self.data.columns and "kapita" not in self.data.columns:
+            return {}
+
+        # ensure required columns for poverty calculation
+        df_for_poverty = self.data
+        if "wert" not in df_for_poverty.columns and "WERT" not in df_for_poverty.columns:
+            # use survey_weight as wert if not present
+            if "survey_weight" in df_for_poverty.columns:
+                df_for_poverty = df_for_poverty.with_columns(pl.col("survey_weight").alias("wert"))
+
+        try:
+            # fetch poverty lines
+            poverty_lines = fetch_poverty_lines(2024, "march")
+        except Exception:
+            # use default if API fails
+            poverty_lines = {("INDONESIA", "urban"): 601871, ("INDONESIA", "rural"): 556874}
+
+        # calculate poverty
+        result_df = calculate_poverty_headcount(
+            df_for_poverty,
+            poverty_lines,
+            exclude_single_person=exclude_single_person,
+        )
+
+        # convert to IndicatorResult format
+        poverty_rate = result_df["poverty_rate_pct"][0]
+        poor_pop = result_df["poor_population"][0]
+        total_pop = result_df["total_population"][0]
+
+        # create simple estimate for now
+        estimate = SurveyEstimate(
+            value=poverty_rate,
+            se=0.0,  # would need bootstrap for SE
+            ci_low=poverty_rate,
+            ci_high=poverty_rate,
+            df=len(self.data) - 1,
+        )
+
+        return {
+            "overall": IndicatorResult(
+                indicator_name="Poverty Headcount Rate (P0)",
+                estimate=estimate,
+                domain=None,
+                metadata={
+                    "poor_population": poor_pop,
+                    "total_population": total_pop,
+                    "exclude_single_person": exclude_single_person,
+                },
+            )
+        }
+
+    def calculate_poverty_gap(
+        self,
+        by: Optional[List[str]] = None,
+        confidence_level: float = 0.95,
+        exclude_single_person: bool = False,
+    ) -> Dict[str, IndicatorResult]:
+        """Calculate poverty gap index (P1)."""
+
+        from ..indicators import calculate_poverty_fgt
+        from ..loaders.bps_api import fetch_poverty_lines
+
+        if "KAPITA" not in self.data.columns and "kapita" not in self.data.columns:
+            return {}
+
+        # ensure required columns for poverty calculation
+        df_for_poverty = self.data
+        if "wert" not in df_for_poverty.columns and "WERT" not in df_for_poverty.columns:
+            if "survey_weight" in df_for_poverty.columns:
+                df_for_poverty = df_for_poverty.with_columns(pl.col("survey_weight").alias("wert"))
+
+        try:
+            poverty_lines = fetch_poverty_lines(2024, "march")
+        except Exception:
+            poverty_lines = {("INDONESIA", "urban"): 601871, ("INDONESIA", "rural"): 556874}
+
+        # P1 has alpha=1
+        result_df = calculate_poverty_fgt(
+            df_for_poverty,
+            poverty_lines,
+            alpha=1,
+            exclude_single_person=exclude_single_person,
+        )
+
+        # extract value
+        gap_value = float(result_df["fgt_index"][0]) if "fgt_index" in result_df.columns else 0.0
+
+        estimate = SurveyEstimate(
+            value=gap_value,
+            se=0.0,
+            ci_low=gap_value,
+            ci_high=gap_value,
+            df=len(self.data) - 1,
+        )
+
+        return {
+            "overall": IndicatorResult(
+                indicator_name="Poverty Gap Index (P1)",
+                estimate=estimate,
+                domain=None,
+                metadata={"exclude_single_person": exclude_single_person},
+            )
+        }
+
+    def calculate_poverty_severity(
+        self,
+        by: Optional[List[str]] = None,
+        confidence_level: float = 0.95,
+        exclude_single_person: bool = False,
+    ) -> Dict[str, IndicatorResult]:
+        """Calculate poverty severity index (P2)."""
+
+        from ..indicators import calculate_poverty_fgt
+        from ..loaders.bps_api import fetch_poverty_lines
+
+        if "KAPITA" not in self.data.columns and "kapita" not in self.data.columns:
+            return {}
+
+        # ensure required columns for poverty calculation
+        df_for_poverty = self.data
+        if "wert" not in df_for_poverty.columns and "WERT" not in df_for_poverty.columns:
+            if "survey_weight" in df_for_poverty.columns:
+                df_for_poverty = df_for_poverty.with_columns(pl.col("survey_weight").alias("wert"))
+
+        try:
+            poverty_lines = fetch_poverty_lines(2024, "march")
+        except Exception:
+            poverty_lines = {("INDONESIA", "urban"): 601871, ("INDONESIA", "rural"): 556874}
+
+        # P2 has alpha=2
+        result_df = calculate_poverty_fgt(
+            df_for_poverty,
+            poverty_lines,
+            alpha=2,
+            exclude_single_person=exclude_single_person,
+        )
+
+        severity_value = (
+            float(result_df["fgt_index"][0]) if "fgt_index" in result_df.columns else 0.0
+        )
+
+        estimate = SurveyEstimate(
+            value=severity_value,
+            se=0.0,
+            ci_low=severity_value,
+            ci_high=severity_value,
+            df=len(self.data) - 1,
+        )
+
+        return {
+            "overall": IndicatorResult(
+                indicator_name="Poverty Severity Index (P2)",
+                estimate=estimate,
+                domain=None,
+                metadata={"exclude_single_person": exclude_single_person},
+            )
+        }
+
+    def calculate_gini_coefficient(
+        self,
+        by: Optional[List[str]] = None,
+        confidence_level: float = 0.95,
+        exclude_single_person: bool = False,
+    ) -> Dict[str, IndicatorResult]:
+        """Calculate Gini coefficient for inequality measurement."""
+
+        from ..indicators import calculate_gini
+
+        # determine value column
+        value_col = next(
+            (
+                col
+                for col in ("KAPITA", "kapita", "per_capita_expenditure")
+                if col in self.data.columns
+            ),
+            None,
+        )
+
+        if value_col is None:
+            return {}
+
+        # determine weight column
+        weight_col = next(
+            (
+                col
+                for col in ("WEIND", "weind", "survey_weight", "weight")
+                if col in self.data.columns
+            ),
+            None,
+        )
+
+        if weight_col is None:
+            weight_col = self.design.weight_col
+
+        # calculate gini
+        gini_value = calculate_gini(
+            self.data,
+            weight_col=weight_col,
+            value_col=value_col,
+            exclude_single_person=exclude_single_person,
+        )
+
+        estimate = SurveyEstimate(
+            value=gini_value,
+            se=0.0,
+            ci_low=gini_value,
+            ci_high=gini_value,
+            df=len(self.data) - 1,
+        )
+
+        return {
+            "overall": IndicatorResult(
+                indicator_name="Gini Coefficient",
+                estimate=estimate,
+                domain=None,
+                metadata={
+                    "exclude_single_person": exclude_single_person,
+                    "value_column": value_col,
+                },
+            )
+        }
+
 
 def calculate_indicators(
     survey_design: SurveyDesign,
@@ -712,6 +991,11 @@ def calculate_indicators(
         "inactivity_rate": calculator.calculate_inactivity_rate,
         "average_wage": calculator.calculate_average_wage,
         "informal_employment_rate": calculator.calculate_informal_employment_rate,
+        "per_capita_expenditure": calculator.calculate_per_capita_expenditure_indicator,
+        "poverty_headcount": calculator.calculate_poverty_headcount,
+        "poverty_gap": calculator.calculate_poverty_gap,
+        "poverty_severity": calculator.calculate_poverty_severity,
+        "gini_coefficient": calculator.calculate_gini_coefficient,
     }
 
     # Comprehensive aliases for convenience
@@ -745,6 +1029,14 @@ def calculate_indicators(
         "wages": "average_wage",
         "neet": "neet_rate",
         "inactivity": "inactivity_rate",
+        "per_capita_expenditure": "per_capita_expenditure",
+        # poverty and inequality indicators
+        "p0": "poverty_headcount",
+        "p1": "poverty_gap",
+        "p2": "poverty_severity",
+        "gini": "gini_coefficient",
+        "poverty_rate": "poverty_headcount",
+        "poverty": "poverty_headcount",
     }
 
     # Handle indicators="all" or indicators=None
@@ -790,7 +1082,18 @@ def calculate_indicators(
                 confidence_level=confidence_level,
                 hours_threshold=kwargs.get("hours_threshold", 35),
             )
-        else:  # unemployment_rate, average_wage, informal_employment_rate
+        elif english_name in [
+            "poverty_headcount",
+            "poverty_gap",
+            "poverty_severity",
+            "gini_coefficient",
+        ]:
+            results[indicator] = method(
+                by=by,
+                confidence_level=confidence_level,
+                exclude_single_person=kwargs.get("exclude_single_person", False),
+            )
+        else:  # unemployment_rate, average_wage, informal_employment_rate, per_capita_expenditure
             results[indicator] = method(by=by, confidence_level=confidence_level)
 
     # Convert to table format if requested (default: True)
@@ -889,9 +1192,13 @@ def format_indicators_as_table(
         except ValueError:
             return 999
 
-    df = df.with_columns(
-        pl.col("indicator").map_elements(get_priority, return_dtype=pl.Int32).alias("_priority")
-    ).sort(["_priority"] + (["domain"] if "domain" in df.columns else [])).drop("_priority")
+    df = (
+        df.with_columns(
+            pl.col("indicator").map_elements(get_priority, return_dtype=pl.Int32).alias("_priority")
+        )
+        .sort(["_priority"] + (["domain"] if "domain" in df.columns else []))
+        .drop("_priority")
+    )
 
     # Add a print method as a convenience
     def print_table():

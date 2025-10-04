@@ -67,8 +67,8 @@ def calculate_poverty_headcount(
     # check if KAPITA exists and is populated
     if "KAPITA" not in df_blok43.columns and "kapita" not in df_blok43.columns:
         raise ValueError(
-            "KAPITA column not found in blok43 data. "
-            "Use blok43 data which contains pre-calculated KAPITA."
+            "KAPITA column not found in blok43 data. Provide blok43 data that includes KAPITA "
+            "before computing poverty indicators."
         )
 
     # normalize column names
@@ -79,8 +79,8 @@ def calculate_poverty_headcount(
 
     if kapita_non_null == 0:
         raise ValueError(
-            "KAPITA values are NULL in blok43 data. "
-            "Ensure you're using the correct blok43 file with populated KAPITA values."
+            "KAPITA values are NULL in blok43. Provide blok43 data that includes KAPITA before "
+            "computing poverty indicators."
         )
 
     print(f"Using KAPITA from blok43 ({kapita_non_null:,} households)")

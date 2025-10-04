@@ -1,10 +1,9 @@
 """
 Inequality indicators for SUSENAS data.
 
-Includes Gini coefficient, Theil index, and percentile ratios.
+BPS official: Gini coefficient (0.379 for March 2024)
+International standards: Percentile ratios (P90/P10, P80/P20)
 """
-
-from typing import Tuple
 
 import numpy as np
 import polars as pl
@@ -18,8 +17,21 @@ def calculate_gini(
 ) -> float:
     """Calculate Gini coefficient using the Lorenz curve method.
 
-    Returns value between 0 (perfect equality) and 1 (perfect inequality).
-    Set exclude_single_person=True to match BPS methodology.
+    BPS official inequality indicator. Returns value between 0 (perfect equality)
+    and 1 (perfect inequality). Set exclude_single_person=True to match BPS methodology.
+
+    Args:
+        df: DataFrame with expenditure data
+        weight_col: Column name for survey weights
+        value_col: Column name for per capita expenditure
+        exclude_single_person: Whether to exclude single-person households
+
+    Returns:
+        Gini coefficient (0.0 to 1.0)
+
+    Example:
+        >>> gini = calculate_gini(df, exclude_single_person=True)
+        >>> print(f"Gini coefficient: {gini:.4f}")  # BPS March 2024: 0.379
     """
     # apply single-person exclusion if requested
     if exclude_single_person and "R301" in df.columns:
@@ -66,79 +78,6 @@ def calculate_gini(
     return gini
 
 
-def calculate_gini_bootstrap(
-    df: pl.DataFrame,
-    n_bootstrap: int = 100,
-    confidence: float = 0.95,
-    weight_col: str = "survey_weight",
-    value_col: str = "per_capita_expenditure",
-    exclude_single_person: bool = False,
-) -> Tuple[float, float, float]:
-    """Calculate Gini coefficient with bootstrap confidence intervals."""
-    # apply exclusion once
-    if exclude_single_person and "R301" in df.columns:
-        df = df.filter(pl.col("R301") != 1)
-
-    gini_values = []
-    n_households = len(df)
-
-    for _ in range(n_bootstrap):
-        # bootstrap sample
-        indices = np.random.choice(n_households, n_households, replace=True)
-        df_boot = df[indices]
-        gini = calculate_gini(df_boot, weight_col, value_col, False)
-        gini_values.append(gini)
-
-    # calculate statistics
-    mean_gini = np.mean(gini_values)
-    alpha = 1 - confidence
-    ci_lower = np.percentile(gini_values, alpha / 2 * 100)
-    ci_upper = np.percentile(gini_values, (1 - alpha / 2) * 100)
-
-    return mean_gini, ci_lower, ci_upper
-
-
-def calculate_theil_index(
-    df: pl.DataFrame,
-    weight_col: str = "survey_weight",
-    value_col: str = "per_capita_expenditure",
-    exclude_single_person: bool = False,
-) -> float:
-    """Calculate Theil index (GE(1)) inequality measure."""
-    # apply single-person exclusion if requested
-    if exclude_single_person and "R301" in df.columns:
-        df = df.filter(pl.col("R301") != 1)
-
-    # ensure columns exist
-    if weight_col not in df.columns:
-        weight_col = "WEIND" if "WEIND" in df.columns else "weight"
-    if value_col not in df.columns:
-        value_col = "KAPITA" if "KAPITA" in df.columns else "per_capita_expenditure"
-
-    # calculate weighted mean
-    weights = df[weight_col].cast(pl.Float64)
-    values = df[value_col].cast(pl.Float64)
-
-    total_weight = weights.sum()
-    mean_value = (values * weights).sum() / total_weight
-
-    # calculate theil components
-    df = df.with_columns(
-        [
-            (pl.col(value_col) / mean_value).alias("ratio"),
-            pl.col(weight_col).cast(pl.Float64).alias("w"),
-        ]
-    )
-
-    df = df.with_columns(
-        [(pl.col("ratio") * pl.col("ratio").log() * pl.col("w")).alias("theil_component")]
-    )
-
-    theil = df["theil_component"].sum() / total_weight
-
-    return float(theil)
-
-
 def calculate_percentile_ratios(
     df: pl.DataFrame,
     weight_col: str = "survey_weight",
@@ -148,6 +87,9 @@ def calculate_percentile_ratios(
     """
     Calculate inequality ratios (P90/P10, P80/P20, etc.).
 
+    International standard inequality indicators used by UN and World Bank.
+    Complements Gini coefficient with interpretable ratio measures.
+
     Args:
         df: DataFrame with expenditure data
         weight_col: Column name for survey weights
@@ -155,7 +97,18 @@ def calculate_percentile_ratios(
         exclude_single_person: Whether to exclude single-person households
 
     Returns:
-        Dictionary with various percentile ratios
+        Dictionary with various percentile ratios:
+        - p90_p10: Top 10% to bottom 10% ratio
+        - p80_p20: Top 20% to bottom 20% ratio
+        - p90_p50: Top 10% to median ratio
+        - p50_p10: Median to bottom 10% ratio
+        - median: Median value
+        - p10: 10th percentile value
+        - p90: 90th percentile value
+
+    Example:
+        >>> ratios = calculate_percentile_ratios(df, exclude_single_person=True)
+        >>> print(f"P90/P10 ratio: {ratios['p90_p10']:.2f}")
     """
     # apply single-person exclusion if requested
     if exclude_single_person and "R301" in df.columns:
@@ -184,52 +137,3 @@ def calculate_percentile_ratios(
     }
 
     return ratios
-
-
-def calculate_atkinson_index(
-    df: pl.DataFrame,
-    epsilon: float = 0.5,
-    weight_col: str = "survey_weight",
-    value_col: str = "per_capita_expenditure",
-    exclude_single_person: bool = False,
-) -> float:
-    """
-    Calculate Atkinson inequality index.
-
-    Args:
-        df: DataFrame with expenditure data
-        epsilon: Inequality aversion parameter (0.5, 1.0, or 2.0 common)
-        weight_col: Column name for survey weights
-        value_col: Column name for per capita values
-        exclude_single_person: Whether to exclude single-person households
-
-    Returns:
-        Atkinson index value
-    """
-    # apply single-person exclusion if requested
-    if exclude_single_person and "R301" in df.columns:
-        df = df.filter(pl.col("R301") != 1)
-
-    # ensure columns exist
-    if weight_col not in df.columns:
-        weight_col = "WEIND" if "WEIND" in df.columns else "weight"
-    if value_col not in df.columns:
-        value_col = "KAPITA" if "KAPITA" in df.columns else "per_capita_expenditure"
-
-    # calculate weighted mean
-    weights = df[weight_col].cast(pl.Float64).to_numpy()
-    values = df[value_col].cast(pl.Float64).to_numpy()
-
-    weights_norm = weights / weights.sum()
-    mean_value = np.sum(values * weights_norm)
-
-    if epsilon == 1:
-        # special case: epsilon = 1
-        log_values = np.log(values / mean_value)
-        atkinson = 1 - np.exp(np.sum(weights_norm * log_values))
-    else:
-        # general case
-        term = np.sum(weights_norm * (values / mean_value) ** (1 - epsilon))
-        atkinson = 1 - term ** (1 / (1 - epsilon))
-
-    return float(atkinson)

@@ -47,6 +47,7 @@ class SusenasLoader(BaseLoader):
         self._variable_labels: Optional[Dict[str, str]] = None
         self._config: Optional[Dict[str, Any]] = None
         self._data_dir: Optional[Path] = None
+        self._reverse_mappings: Optional[Dict[str, List[str]]] = None
 
     def load(
         self,
@@ -94,12 +95,20 @@ class SusenasLoader(BaseLoader):
         else:
             raise ValueError(f"Invalid module: {module}")
 
+        # derive sample size (prefer unique households when URUT is present)
+        sample_size = None
+        if isinstance(df, pl.DataFrame):
+            if "URUT" in df.columns:
+                sample_size = int(df.select(pl.col("URUT").n_unique()).item())
+            else:
+                sample_size = df.shape[0]
+
         # create metadata
         self._metadata = DatasetMetadata(
             dataset_name="SUSENAS",
             survey_wave=wave,
             reference_period=f"{wave} (March 2024)",
-            sample_size=df.shape[0],
+            sample_size=sample_size,
             weight_variable="FWT",
             strata_variable="STRATA",
             psu_variable="PSU",
@@ -135,8 +144,19 @@ class SusenasLoader(BaseLoader):
         elif category == "housing":
             return self._load_dbf_file(kp_files["housing"])
         elif category == "all":
-            df_housing = self._load_dbf_file(kp_files["housing"])
-            return df_housing
+            df_food = self._load_and_stack(kp_files["food"]).with_columns(
+                pl.lit("food").alias("_kp_category")
+            )
+            df_nonfood = self._load_and_stack(kp_files["nonfood"]).with_columns(
+                pl.lit("nonfood").alias("_kp_category")
+            )
+            df_housing = self._load_dbf_file(kp_files["housing"]).with_columns(
+                pl.lit("housing").alias("_kp_category")
+            )
+
+            return pl.concat(
+                [df_food, df_nonfood, df_housing], how="diagonal_relaxed"
+            )
         else:
             raise ValueError(f"Invalid category: {category}")
 
@@ -192,6 +212,7 @@ class SusenasLoader(BaseLoader):
             if wave_config_path.exists():
                 try:
                     self._config = load_config_with_inheritance(wave_config_path)
+                    self._build_reverse_mappings()
                     return
                 except Exception as e:
                     print(f"Warning: Failed to load wave config {wave}: {e}")
@@ -201,9 +222,11 @@ class SusenasLoader(BaseLoader):
         try:
             with open(defaults_path, "r") as f:
                 self._config = yaml.safe_load(f)
+            self._build_reverse_mappings()
         except Exception as e:
             print(f"Warning: Failed to load defaults: {e}")
             self._config = None
+            self._reverse_mappings = None
 
     def get_survey_design(self) -> SurveyDesignInfo:
         """Get survey design information for SUSENAS."""
@@ -217,6 +240,19 @@ class SusenasLoader(BaseLoader):
             finite_population_correction=True,
             domain_cols=["R101", "R105"],
         )
+
+    def _build_reverse_mappings(self) -> None:
+        """Build reverse mapping from canonical names to raw SUSENAS field names."""
+        if not self._config or "fields" not in self._config:
+            self._reverse_mappings = None
+            return
+
+        reverse: Dict[str, List[str]] = {}
+        for raw_name, field_info in self._config["fields"].items():
+            canon = field_info.get("canon_name", raw_name.lower())
+            reverse.setdefault(canon, []).append(raw_name)
+
+        self._reverse_mappings = reverse
 
 
 def load_susenas(

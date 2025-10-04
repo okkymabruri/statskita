@@ -88,29 +88,6 @@ def dbf_to_parquet(
     return parquet_path
 
 
-def batch_convert_dbf_to_parquet(directory: Union[str, Path], pattern: str = "*.dbf") -> list[Path]:
-    """Convert all DBF files in a directory to Parquet.
-
-    Args:
-        directory: Directory containing DBF files
-        pattern: Glob pattern for DBF files (default: "*.dbf")
-
-    Returns:
-        List of created Parquet file paths
-    """
-    directory = Path(directory)
-    parquet_files = []
-
-    for dbf_file in directory.glob(pattern):
-        try:
-            pq_file = dbf_to_parquet(dbf_file)
-            parquet_files.append(pq_file)
-        except Exception as e:
-            print(f"Failed: {dbf_file.name} ({e})")
-
-    return parquet_files
-
-
 def dta_to_parquet(
     dta_path: Union[str, Path],
     parquet_path: Optional[Union[str, Path]] = None,
@@ -180,38 +157,3 @@ def dta_to_parquet(
         print(f"Using cached: {parquet_path.name}")
 
     return parquet_path
-
-
-def batch_convert_dta_to_parquet(
-    source_dir: Union[str, Path],
-    target_dir: Optional[Union[str, Path]] = None,
-    pattern: str = "*.dta",
-) -> list[Path]:
-    """Convert all Stata DTA files to Parquet.
-
-    Args:
-        source_dir: Directory containing DTA files
-        target_dir: Optional target directory (defaults to source_dir)
-        pattern: Glob pattern for DTA files (default: "*.dta")
-
-    Returns:
-        List of created Parquet file paths
-    """
-    source_dir = Path(source_dir)
-    if target_dir is None:
-        target_dir = source_dir
-    else:
-        target_dir = Path(target_dir)
-        target_dir.mkdir(exist_ok=True)
-
-    parquet_files = []
-
-    for dta_file in sorted(source_dir.glob(pattern)):
-        try:
-            output_path = target_dir / dta_file.with_suffix(".parquet").name
-            pq_file = dta_to_parquet(dta_file, output_path)
-            parquet_files.append(pq_file)
-        except Exception as e:
-            print(f"Failed: {dta_file.name} ({e})")
-
-    return parquet_files

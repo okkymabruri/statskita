@@ -23,7 +23,7 @@ from .loaders.multi_wave import (
     load_and_harmonize_multi,
     load_sakernas_multi,
 )
-from .utils import batch_convert_dbf_to_parquet, dbf_to_parquet
+from .utils import dbf_to_parquet, dta_to_parquet
 
 
 def load_podes(*args, **kwargs):
@@ -58,6 +58,6 @@ __all__ = [
     "export_excel_multiple_sheets",
     "export_parquet",
     "dbf_to_parquet",
-    "batch_convert_dbf_to_parquet",
+    "dta_to_parquet",
     "sakernas",  # metadata API
 ]

@@ -8,14 +8,12 @@ from .inequality import (
     calculate_theil_index,
 )
 from .poverty import (
-    calculate_per_capita_expenditure,
     calculate_poverty_fgt,
     calculate_poverty_headcount,
 )
 
 __all__ = [
     # poverty indicators
-    "calculate_per_capita_expenditure",
     "calculate_poverty_headcount",
     "calculate_poverty_fgt",
     # inequality indicators

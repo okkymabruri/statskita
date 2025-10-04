@@ -5,13 +5,9 @@ Full features planned for v0.4.0.
 """
 
 import os
-import warnings
 from typing import Dict, Optional, Tuple
 
 import requests
-from urllib3.exceptions import InsecureRequestWarning
-
-warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
 
 class BPSAPIClient:
@@ -66,7 +62,7 @@ class BPSAPIClient:
         # var 195 = poverty line
         url = f"{self.BASE_URL}/list/model/data/lang/ind/domain/0000/var/195/th/{year_code}/key/{self.api_key}"
 
-        response = requests.get(url, params={"tur": period_code}, timeout=30, verify=False)
+        response = requests.get(url, params={"tur": period_code}, timeout=30)
         response.raise_for_status()
 
         data = response.json()

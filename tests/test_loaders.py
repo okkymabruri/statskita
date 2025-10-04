@@ -72,7 +72,7 @@ def test_bps_api_client_parses_poverty_lines():
         lines = client.get_poverty_lines(2024, "march")
 
         expected_url = "https://webapi.bps.go.id/v1/api/list/model/data/lang/ind/domain/0000/var/195/th/124/key/dummy"
-        mock_get.assert_called_once_with(expected_url, params={"tur": 61}, timeout=30, verify=False)
+        mock_get.assert_called_once_with(expected_url, params={"tur": 61}, timeout=30)
 
         assert lines[("ACEH", "urban")] == 704200.0
         assert lines[("ACEH", "rural")] == 645000.0

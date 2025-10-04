@@ -7,100 +7,11 @@ Key findings:
 """
 
 import warnings
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import polars as pl
 
 from ..core.survey import SurveyDesign
-
-
-def calculate_per_capita_expenditure(
-    df_food: pl.DataFrame,
-    df_nonfood: pl.DataFrame,
-    by: Optional[List[str]] = None,
-) -> pl.DataFrame:
-    """Calculate per capita monthly expenditure from SUSENAS consumption data.
-
-    Aggregates food (weekly) and non-food (monthly/annual) expenditure.
-    Returns per capita values grouped by specified variables.
-    """
-
-    food_agg = df_food.group_by("URUT").agg(
-        [
-            pl.col("B41K10").sum().cast(pl.Float64).alias("food_weekly"),
-            pl.col("R301").first().alias("hhsize"),
-            pl.col("R105").first().alias("urban_rural"),
-            pl.col("R101").first().alias("province"),
-            pl.col("WERT").first().cast(pl.Float64).alias("weight"),
-        ]
-    )
-
-    nonfood_agg = df_nonfood.group_by("URUT").agg(
-        [
-            pl.col("B42K4").sum().cast(pl.Float64).alias("nonfood_monthly"),
-            pl.col("B42K5").sum().cast(pl.Float64).alias("nonfood_annual"),
-        ]
-    )
-
-    df = food_agg.join(nonfood_agg, on="URUT", how="left")
-
-    df = df.with_columns(
-        [
-            pl.col("nonfood_monthly").fill_null(0.0),
-            pl.col("nonfood_annual").fill_null(0.0),
-        ]
-    )
-
-    df = df.with_columns(
-        [
-            (pl.col("food_weekly") * 30 / 14).alias("food_monthly"),
-            ((pl.col("nonfood_monthly") + pl.col("nonfood_annual") / 12) * 0.5).alias(
-                "nonfood_total"
-            ),
-        ]
-    )
-
-    df = df.with_columns(
-        [
-            (pl.col("food_monthly") + pl.col("nonfood_total")).alias("total_monthly"),
-            (pl.col("food_monthly") / pl.col("hhsize")).alias("food_percap"),
-            ((pl.col("food_monthly") + pl.col("nonfood_total")) / pl.col("hhsize")).alias(
-                "total_percap"
-            ),
-        ]
-    )
-
-    # aggregate by groups with weighted means
-    if by is None:
-        # national average without grouping
-        result = pl.DataFrame(
-            {
-                "food_percap": [(df["food_percap"] * df["weight"]).sum() / df["weight"].sum()],
-                "total_percap": [(df["total_percap"] * df["weight"]).sum() / df["weight"].sum()],
-                "total_weight": [df["weight"].sum()],
-                "n_households": [len(df)],
-            }
-        )
-    else:
-        # grouped by specified variables
-        result = (
-            df.group_by(by)
-            .agg(
-                [
-                    (
-                        (pl.col("food_percap") * pl.col("weight")).sum() / pl.col("weight").sum()
-                    ).alias("food_percap"),
-                    (
-                        (pl.col("total_percap") * pl.col("weight")).sum() / pl.col("weight").sum()
-                    ).alias("total_percap"),
-                    pl.col("weight").sum().alias("total_weight"),
-                    pl.len().alias("n_households"),
-                ]
-            )
-            .sort(by)
-        )
-
-    return result
 
 
 def calculate_poverty_fgt(
@@ -157,7 +68,7 @@ def calculate_poverty_headcount(
     if "KAPITA" not in df_blok43.columns and "kapita" not in df_blok43.columns:
         raise ValueError(
             "KAPITA column not found in blok43 data. "
-            "Use calculate_per_capita_expenditure() to compute first."
+            "Use blok43 data which contains pre-calculated KAPITA."
         )
 
     # normalize column names
@@ -168,8 +79,8 @@ def calculate_poverty_headcount(
 
     if kapita_non_null == 0:
         raise ValueError(
-            "KAPITA is NULL in blok43. DBF/parquet files don't include pre-calculated values. "
-            "Use Stata .dta files OR calculate KAPITA using calculate_per_capita_expenditure()."
+            "KAPITA values are NULL in blok43 data. "
+            "Ensure you're using the correct blok43 file with populated KAPITA values."
         )
 
     print(f"Using KAPITA from blok43 ({kapita_non_null:,} households)")

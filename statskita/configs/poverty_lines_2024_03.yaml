@@ -1,0 +1,122 @@
+# BPS Poverty Lines March 2024
+# Source: BPS API var 195, th 124, tur 61 (March)
+# Retrieved: 2025-10-04
+
+period: 2024-03
+national:
+  urban: 674436
+  rural: 624014
+provinces:
+  11:
+    urban: 696048
+    rural: 643398
+  12:
+    rural: 610264
+    urban: 667922
+  13:
+    rural: 691901
+    urban: 723567
+  14:
+    rural: 669374
+    urban: 740222
+  15:
+    rural: 606150
+    urban: 744044
+  16:
+    rural: 533792
+    urban: 589596
+  17:
+    urban: 736758
+    rural: 640485
+  18:
+    rural: 560363
+    urban: 640908
+  19:
+    urban: 892169
+    rural: 930378
+  21:
+    urban: 791352
+    rural: 749604
+  31:
+    urban: 825288
+  32:
+    urban: 525489
+    rural: 517841
+  33:
+    urban: 517415
+    rural: 495627
+  34:
+    urban: 628626
+    rural: 524188
+  35:
+    rural: 516684
+    urban: 551702
+  36:
+    rural: 590082
+    urban: 671171
+  51:
+    rural: 520238
+    urban: 586945
+  52:
+    urban: 547412
+    rural: 520679
+  53:
+    rural: 488995
+    urban: 638261
+  61:
+    rural: 567773
+    urban: 643365
+  62:
+    urban: 600297
+    rural: 640651
+  63:
+    urban: 643008
+    rural: 621494
+  64:
+    rural: 822269
+    urban: 838902
+  65:
+    urban: 885655
+    rural: 799327
+  71:
+    urban: 498271
+    rural: 481647
+  72:
+    rural: 594692
+    urban: 612668
+  73:
+    rural: 436463
+    urban: 485401
+  74:
+    rural: 448359
+    urban: 485632
+  75:
+    urban: 475851
+    rural: 469568
+  76:
+    rural: 453719
+    urban: 459812
+  81:
+    urban: 724132
+    rural: 705301
+  82:
+    urban: 642484
+    rural: 588740
+  91:
+    rural: 734247
+    urban: 922150
+  92:
+    urban: 765253
+    rural: 747651
+  94:
+    urban: 749674
+    rural: 570295
+  95:
+    urban: 646036
+    rural: 442090
+  96:
+    urban: 920104
+    rural: 714270
+  97:
+    urban: 1283920
+    rural: 992374

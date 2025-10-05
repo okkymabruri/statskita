@@ -6,59 +6,52 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **v0.2.0 (beta)**: Multi-wave analysis with 100% validation. Production-ready for 4 SAKERNAS waves (2023-02 to 2025-02).
+> **v0.3.0**: SAKERNAS (labor) + SUSENAS (poverty/inequality)
 
-## TL;DR
+## What's Supported
 
-Python toolkit for Indonesian official microdata (SAKERNAS, SUSENAS, PODES, and more) with survey-aware analysis.
+| Dataset | Waves | Indicators |
+|---------|-------|------------|
+| SAKERNAS | 5 (2023-02 → 2025-02) | Labor force, employment, wages |
+| SUSENAS | 2 (2023-03, 2024-03) | Poverty (P0, P1, P2), Gini |
 
-**Currently supported**: SAKERNAS labor force survey with multi-wave analysis.
+## Installation
+
+```bash
+pip install statskita
+```
 
 ## Quick Start
 
+**Single wave:**
 ```python
 import statskita as sk
 
-# load SAKERNAS data (supports .dbf, .dta, .sav, .parquet)
-df = sk.load_sakernas("sakernas_2025-02.parquet")
-
-# wrangle and harmonize
+# SAKERNAS
+df = sk.load_sakernas(wave="2025-02")
 clean_df = sk.wrangle(df, harmonize=True, source_wave="2025-02")
+design = sk.declare_survey(clean_df, weight="survey_weight", psu="psu")
+results = sk.calculate_indicators(design, ["unemployment_rate", "lfpr"])
 
-# declare survey design
-design = sk.declare_survey(clean_df, weight="survey_weight", strata=None, psu="psu")
-
-# calculate indicators
-results = sk.calculate_indicators(
-    design,
-    indicators="all",
-    as_table=True,
-    include_ci=False
-)
+# SUSENAS
+df = sk.load_susenas(wave="2024-03", module="kp", category="housing")
+design = sk.declare_survey(df, weight="WEIND", wave="2024-03")
+results = sk.calculate_indicators(design, ["p0", "p1", "p2", "gini"])
 ```
 
-## Multi-Wave Analysis
-
+**Multi-wave comparison:**
 ```python
-# load multiple waves
-waves = ["2023-02", "2023-08", "2024-02", "2025-02"]
-harmonized = {}
+# SAKERNAS
+sakernas_waves = {w: sk.load_sakernas(wave=w) for w in ["2023-02", "2023-08", "2024-02", "2025-02"]}
+harmonized = {w: sk.wrangle(df, harmonize=True, source_wave=w) for w, df in sakernas_waves.items()}
+sakernas_results = sk.calculate_indicators_multi(harmonized, "all", as_wide=True)
 
-for wave in waves:
-    df = sk.load_sakernas(f"sakernas_{wave}.parquet", wave=wave)
-    harmonized[wave] = sk.wrangle(df, source_wave=wave, harmonize=True)
-
-# compare across waves
-results = sk.calculate_indicators_multi(
-    harmonized,
-    indicators="all",
-    as_wide=True
-)
-
-print(results)
+# SUSENAS
+susenas_waves = {w: sk.load_susenas(wave=w, module="kp", category="housing") for w in ["2023-03", "2024-03"]}
+susenas_results = sk.calculate_indicators_multi(susenas_waves, ["p0", "p1", "p2", "gini"], as_wide=True)
 ```
 
-**Output** (wide-format comparison):
+**SAKERNAS output:**
 ```
 ┌─────────────────────────────────┬──────┬─────────┬─────────┬─────────┬─────────┐
 │ indicator                       ┆ unit ┆ 2023-02 ┆ 2023-08 ┆ 2024-02 ┆ 2025-02 │
@@ -67,24 +60,29 @@ print(results)
 │ employment_rate                 ┆ %    ┆ ...     ┆ ...     ┆ ...     ┆ ...     │
 │ unemployment_rate               ┆ %    ┆ 5.45    ┆ 5.32    ┆ 4.82    ┆ 4.76    │
 │ underemployment_rate            ┆ %    ┆ ...     ┆ ...     ┆ ...     ┆ ...     │
-│ female_labor_force_participat…  ┆ %    ┆ ...     ┆ ...     ┆ ...     ┆ ...     │
+│ female_lfpr                     ┆ %    ┆ ...     ┆ ...     ┆ ...     ┆ ...     │
 │ average_wage                    ┆ M Rp ┆ ...     ┆ ...     ┆ ...     ┆ ...     │
+│ neet_rate                       ┆ %    ┆ ...     ┆ ...     ┆ ...     ┆ ...     │
 └─────────────────────────────────┴──────┴─────────┴─────────┴─────────┴─────────┘
 ```
 
-## Installation
-
-```bash
-pip install statskita
+**SUSENAS output:**
+```
+┌───────────┬──────┬─────────┬─────────┐
+│ indicator ┆ unit ┆ 2023-03 ┆ 2024-03 │
+├───────────┼──────┼─────────┼─────────┤
+│ p0        ┆      ┆ 9.36    ┆ 9.03    │
+│ p1        ┆      ┆ 1.53    ┆ 1.46    │
+│ p2        ┆      ┆ 0.38    ┆ 0.35    │
+│ gini      ┆      ┆ 0.39    ┆ 0.38    │
+└───────────┴──────┴─────────┴─────────┘
 ```
 
 ## Features
 
-- **Multi-wave support**: Compare indicators across 4 validated waves (2023-02 to 2025-02)
-- **Multiple formats**: Load .dbf, .dta, .sav, .parquet files
-- **Config-driven**: Automatic harmonization across waves
-- **Survey-aware**: Proper handling of weights, PSU, strata
-- **Fast processing**: Polars backend for large datasets
-- **Complete indicators**: LFPR, unemployment, underemployment, wages, and more
+- **Multi-wave analysis**: Built-in cross-wave comparison
+- **Automatic poverty lines**: Province-specific lines loaded for SUSENAS
+- **Survey-aware**: Handles weights, strata, PSU correctly
+- **Fast**: Polars backend
 
-See examples/ directory for detailed usage.
+See `examples/` for detailed usage.

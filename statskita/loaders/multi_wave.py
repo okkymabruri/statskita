@@ -244,9 +244,9 @@ def calculate_indicators_multi(
     # calculate indicators for each wave
     for wave, df in datasets.items():
         try:
-            # auto-detect weight column (harmonized data uses 'survey_weight')
+            # auto-detect weight column
             weight_col = None
-            for col in ["survey_weight", "WEIGHT", "WEIGHTR", "weight"]:
+            for col in ["survey_weight", "WEIND", "WEIGHT", "WEIGHTR", "WERT", "weight"]:
                 if col in df.columns:
                     weight_col = col
                     break
@@ -266,12 +266,13 @@ def calculate_indicators_multi(
                         strata_col = col
                         break
 
-            # declare survey design (strata=None by default to avoid singleton PSU)
+            # declare survey design (pass wave for automatic poverty line loading)
             design = declare_survey(
                 df,
                 weight=weight_col,
                 strata=strata_col,
                 psu=psu_col,
+                wave=wave if isinstance(wave, str) else None,
             )
 
             # calculate indicators

@@ -215,16 +215,20 @@ class SusenasLoader(BaseLoader):
                 except Exception as e:
                     print(f"Warning: Failed to load wave config {wave}: {e}")
 
-        # fallback to defaults
-        defaults_path = config_dir / "defaults.yaml"
-        try:
-            with open(defaults_path, "r") as f:
-                self._config = yaml.safe_load(f)
-            self._build_reverse_mappings()
-        except Exception as e:
-            print(f"Warning: Failed to load defaults: {e}")
-            self._config = None
-            self._reverse_mappings = None
+        # fallback to base config
+        base_path = config_dir / "base.yaml"
+        if base_path.exists():
+            try:
+                with open(base_path, "r") as f:
+                    self._config = yaml.safe_load(f)
+                self._build_reverse_mappings()
+                return
+            except Exception:
+                pass
+
+        # no config available
+        self._config = None
+        self._reverse_mappings = None
 
     def get_survey_design(self) -> SurveyDesignInfo:
         """Get survey design information for SUSENAS."""

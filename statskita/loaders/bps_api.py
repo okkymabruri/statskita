@@ -100,6 +100,49 @@ class BPSAPIClient:
         return poverty_lines
 
 
+def load_poverty_lines_from_config(year: int = 2024, period: str = "march") -> Dict[Tuple[str, str], float]:
+    """Load poverty lines from cached YAML configuration.
+
+    Args:
+        year: Year
+        period: 'march' or 'september'
+
+    Returns:
+        Dict of (province, urban/rural) -> poverty line
+
+    Example:
+        >>> lines = load_poverty_lines_from_config(2024, 'march')
+        >>> lines[('INDONESIA', 'urban')]
+        601871
+    """
+    from pathlib import Path
+    import yaml
+    from ..indicators.poverty import PROVINCE_CODE_TO_NAME
+
+    month = "03" if period == "march" else "09"
+    cache_file = Path(__file__).parent.parent / "configs" / f"poverty_lines_{year}_{month}.yaml"
+
+    if not cache_file.exists():
+        raise FileNotFoundError(f"Poverty lines config not found: {cache_file}")
+
+    with open(cache_file, 'r') as f:
+        data = yaml.safe_load(f)
+
+    poverty_lines = {}
+    poverty_lines[('INDONESIA', 'urban')] = float(data['national']['urban'])
+    poverty_lines[('INDONESIA', 'rural')] = float(data['national']['rural'])
+
+    for code, values in data.get('provinces', {}).items():
+        prov_name = PROVINCE_CODE_TO_NAME.get(code)
+        if prov_name:
+            if 'urban' in values:
+                poverty_lines[(prov_name, 'urban')] = float(values['urban'])
+            if 'rural' in values:
+                poverty_lines[(prov_name, 'rural')] = float(values['rural'])
+
+    return poverty_lines
+
+
 def fetch_poverty_lines(year: int = 2024, period: str = "march") -> Dict[Tuple[str, str], float]:
     """Fetch poverty lines from BPS API.
 

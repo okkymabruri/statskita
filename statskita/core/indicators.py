@@ -715,12 +715,18 @@ class IndicatorCalculator:
         """Calculate poverty headcount rate (P0) using KAPITA from blok43."""
 
         # import from indicators module
-        from ..indicators import calculate_poverty_headcount
-        from ..loaders.bps_api import fetch_poverty_lines
+        from ..indicators import calculate_poverty_headcount, load_poverty_lines_from_config
 
         # check if this is SUSENAS data with KAPITA
         if "KAPITA" not in self.data.columns and "kapita" not in self.data.columns:
             return {}
+
+        # check wave is provided for poverty indicators
+        if not self.design.wave:
+            raise ValueError(
+                "Wave parameter required for poverty indicators. "
+                "Pass wave to declare_survey(): sk.declare_survey(df, weight='WEIND', wave='2024-03')"
+            )
 
         # ensure required columns for poverty calculation
         df_for_poverty = self.data
@@ -729,12 +735,9 @@ class IndicatorCalculator:
             if "survey_weight" in df_for_poverty.columns:
                 df_for_poverty = df_for_poverty.with_columns(pl.col("survey_weight").alias("wert"))
 
-        try:
-            # fetch poverty lines
-            poverty_lines = fetch_poverty_lines(2024, "march")
-        except Exception:
-            # use default if API fails
-            poverty_lines = {("INDONESIA", "urban"): 601871, ("INDONESIA", "rural"): 556874}
+        # load poverty lines from config based on wave
+        year = int(self.design.wave[:4])
+        poverty_lines = load_poverty_lines_from_config(year, "march")
 
         # calculate poverty
         result_df = calculate_poverty_headcount(
@@ -775,11 +778,16 @@ class IndicatorCalculator:
     ) -> Dict[str, IndicatorResult]:
         """Calculate poverty gap index (P1)."""
 
-        from ..indicators import calculate_poverty_fgt
-        from ..loaders.bps_api import fetch_poverty_lines
+        from ..indicators import calculate_poverty_fgt, load_poverty_lines_from_config
 
         if "KAPITA" not in self.data.columns and "kapita" not in self.data.columns:
             return {}
+
+        if not self.design.wave:
+            raise ValueError(
+                "Wave parameter required for poverty indicators. "
+                "Pass wave to declare_survey(): sk.declare_survey(df, weight='WEIND', wave='2024-03')"
+            )
 
         # ensure required columns for poverty calculation
         df_for_poverty = self.data
@@ -787,10 +795,9 @@ class IndicatorCalculator:
             if "survey_weight" in df_for_poverty.columns:
                 df_for_poverty = df_for_poverty.with_columns(pl.col("survey_weight").alias("wert"))
 
-        try:
-            poverty_lines = fetch_poverty_lines(2024, "march")
-        except Exception:
-            poverty_lines = {("INDONESIA", "urban"): 601871, ("INDONESIA", "rural"): 556874}
+        # load poverty lines from config based on wave
+        year = int(self.design.wave[:4])
+        poverty_lines = load_poverty_lines_from_config(year, "march")
 
         # P1 has alpha=1
         result_df = calculate_poverty_fgt(
@@ -826,11 +833,16 @@ class IndicatorCalculator:
     ) -> Dict[str, IndicatorResult]:
         """Calculate poverty severity index (P2)."""
 
-        from ..indicators import calculate_poverty_fgt
-        from ..loaders.bps_api import fetch_poverty_lines
+        from ..indicators import calculate_poverty_fgt, load_poverty_lines_from_config
 
         if "KAPITA" not in self.data.columns and "kapita" not in self.data.columns:
             return {}
+
+        if not self.design.wave:
+            raise ValueError(
+                "Wave parameter required for poverty indicators. "
+                "Pass wave to declare_survey(): sk.declare_survey(df, weight='WEIND', wave='2024-03')"
+            )
 
         # ensure required columns for poverty calculation
         df_for_poverty = self.data
@@ -838,10 +850,9 @@ class IndicatorCalculator:
             if "survey_weight" in df_for_poverty.columns:
                 df_for_poverty = df_for_poverty.with_columns(pl.col("survey_weight").alias("wert"))
 
-        try:
-            poverty_lines = fetch_poverty_lines(2024, "march")
-        except Exception:
-            poverty_lines = {("INDONESIA", "urban"): 601871, ("INDONESIA", "rural"): 556874}
+        # load poverty lines from config based on wave
+        year = int(self.design.wave[:4])
+        poverty_lines = load_poverty_lines_from_config(year, "march")
 
         # P2 has alpha=2
         result_df = calculate_poverty_fgt(

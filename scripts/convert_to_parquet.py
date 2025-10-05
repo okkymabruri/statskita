@@ -141,7 +141,7 @@ def convert_dataset(dataset: str) -> int:
     parquet_dir = os.environ.get(parquet_dir_key)
 
     if not data_dir or not parquet_dir:
-        print(f"ERROR: Missing environment variables")
+        print("ERROR: Missing environment variables")
         print(f"Set {data_dir_key} and {parquet_dir_key} in .env file")
         return 1
 

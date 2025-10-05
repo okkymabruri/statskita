@@ -81,8 +81,7 @@ susenas_results = sk.calculate_indicators_multi(susenas_waves, ["p0", "p1", "p2"
 ## Features
 
 - **Multi-wave analysis**: Built-in cross-wave comparison
-- **Automatic poverty lines**: Province-specific lines loaded for SUSENAS
 - **Survey-aware**: Handles weights, strata, PSU correctly
-- **Fast**: Polars backend
+- **Open source**: Free, no licensing costs
 
 See `examples/` for detailed usage.

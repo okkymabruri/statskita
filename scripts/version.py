@@ -32,10 +32,21 @@ def git_status_clean():
 
 def update_version_files(new_version):
     """Update version in all relevant files."""
-    # Update pyproject.toml
+    # Update pyproject.toml (only project version, preserve ruff target-version)
     path = Path("pyproject.toml")
     content = path.read_text()
-    updated = re.sub(r'version = "[^"]+"', f'version = "{new_version}"', content)
+    # Match only the version under [project] section
+    lines = content.split('\n')
+    in_project = False
+    for i, line in enumerate(lines):
+        if line.strip() == '[project]':
+            in_project = True
+        elif line.strip().startswith('[') and in_project:
+            in_project = False
+        elif in_project and line.startswith('version ='):
+            lines[i] = f'version = "{new_version}"'
+            break
+    updated = '\n'.join(lines)
     path.write_text(updated)
     print(f"Updated pyproject.toml to {new_version}")
 
@@ -176,8 +187,8 @@ def cmd_release(args):
     else:
         print("Note: Not pushed (use --no-push to disable auto-push)")
 
-    # Set next dev version
-    if not args.no_dev:
+    # Set next dev version (disabled by default)
+    if args.dev:
         major, minor, patch = parse_version(new_version)
         next_dev = f"{major}.{minor}.{patch + 1}.dev0"
         print(f"\nSetting next dev version: {next_dev}")
@@ -223,7 +234,7 @@ Examples:
     release_parser.add_argument("--minor", action="store_true", help="Minor version bump")
     release_parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation")
     release_parser.add_argument("--no-push", action="store_true", help="Don't push to remote")
-    release_parser.add_argument("--no-dev", action="store_true", help="Don't set next dev version")
+    release_parser.add_argument("--dev", action="store_true", help="Set next dev version after release")
 
     args = parser.parse_args()
 

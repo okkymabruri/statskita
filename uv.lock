@@ -2806,6 +2806,11 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+analysis = [
+    { name = "ipykernel" },
+    { name = "matplotlib" },
+    { name = "seaborn" },
+]
 cli = [
     { name = "rich" },
     { name = "typer" },
@@ -2823,15 +2828,6 @@ docs = [
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
 ]
-notebook = [
-    { name = "ipykernel" },
-    { name = "matplotlib" },
-    { name = "seaborn" },
-]
-viz = [
-    { name = "matplotlib" },
-    { name = "seaborn" },
-]
 
 [package.dev-dependencies]
 dev = [
@@ -2844,9 +2840,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dbfrs", specifier = ">=0.1.5" },
-    { name = "ipykernel", marker = "extra == 'notebook'", specifier = ">=6.0.0" },
-    { name = "matplotlib", marker = "extra == 'notebook'", specifier = ">=3.6.0" },
-    { name = "matplotlib", marker = "extra == 'viz'", specifier = ">=3.6.0" },
+    { name = "ipykernel", marker = "extra == 'analysis'", specifier = ">=6.0.0" },
+    { name = "matplotlib", marker = "extra == 'analysis'", specifier = ">=3.6.0" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.5.0" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.0.0" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'", specifier = ">=0.22.0" },
@@ -2865,14 +2860,13 @@ requires-dist = [
     { name = "rich", marker = "extra == 'cli'", specifier = ">=13.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "samplics", specifier = ">=0.4.0" },
-    { name = "seaborn", marker = "extra == 'notebook'", specifier = ">=0.12.0" },
-    { name = "seaborn", marker = "extra == 'viz'", specifier = ">=0.12.0" },
+    { name = "seaborn", marker = "extra == 'analysis'", specifier = ">=0.12.0" },
     { name = "typer", marker = "extra == 'cli'", specifier = ">=0.9.0" },
     { name = "typing-extensions", specifier = ">=4.5.0" },
     { name = "xlrd", marker = "extra == 'dev'", specifier = ">=2.0.2" },
     { name = "xlsxwriter", specifier = ">=3.2.9" },
 ]
-provides-extras = ["viz", "notebook", "dev", "cli", "docs"]
+provides-extras = ["analysis", "dev", "cli", "docs"]
 
 [package.metadata.requires-dev]
 dev = [

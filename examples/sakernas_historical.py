@@ -67,10 +67,7 @@ designs = {}
 for wave, df in datasets.items():
     harmonized[wave] = sk.wrangle(df, source_wave=wave, harmonize=True)
     designs[wave] = sk.declare_survey(
-        harmonized[wave],
-        weight="survey_weight",
-        strata=None,
-        psu="psu"
+        harmonized[wave], weight="survey_weight", strata=None, psu="psu"
     )
 
 print(f"\nCreated survey designs for {len(designs)} waves")
@@ -78,11 +75,7 @@ print(f"\nCreated survey designs for {len(designs)} waves")
 # %%
 # calculate indicators using multi-wave function
 
-results_wide = sk.calculate_indicators_multi(
-    harmonized,
-    indicators="all",
-    as_wide=True
-)
+results_wide = sk.calculate_indicators_multi(harmonized, indicators="all", as_wide=True)
 
 print("\nCross-wave comparison:")
 print(results_wide)
@@ -116,7 +109,7 @@ provincial = sk.calculate_indicators(
     indicators=["unemployment_rate", "labor_force_participation_rate"],
     by=["province_code"],
     as_table=True,
-    include_ci=False
+    include_ci=False,
 )
 
 print("\nProvincial unemployment (2025-02):")
@@ -133,7 +126,7 @@ industry_results = sk.calculate_indicators(
     indicators=["labor_force_participation_rate", "informal_employment_rate"],
     by=["industry_sector"],
     as_table=True,
-    include_ci=False
+    include_ci=False,
 )
 
 print("\nIndustry analysis:")

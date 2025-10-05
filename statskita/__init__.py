@@ -16,20 +16,14 @@ from .core.multilevel import (
     pivot_indicators_wide,
 )
 from .exporters import export_excel, export_excel_multiple_sheets, export_parquet, export_stata
-from .loaders import load_sakernas
+from .loaders import load_sakernas, load_susenas
 from .loaders.multi_wave import (
     calculate_indicators_multi,
     compare_waves,
     load_and_harmonize_multi,
     load_sakernas_multi,
 )
-from .utils import batch_convert_dbf_to_parquet, dbf_to_parquet
-
-
-# placeholder loaders - coming in v0.2.0
-def load_susenas(*args, **kwargs):
-    """SUSENAS loader - not yet implemented."""
-    raise NotImplementedError("SUSENAS loader coming in v0.2.0. See dev/susenas.py for draft.")
+from .utils import dbf_to_parquet, dta_to_parquet
 
 
 def load_podes(*args, **kwargs):
@@ -64,6 +58,6 @@ __all__ = [
     "export_excel_multiple_sheets",
     "export_parquet",
     "dbf_to_parquet",
-    "batch_convert_dbf_to_parquet",
+    "dta_to_parquet",
     "sakernas",  # metadata API
 ]

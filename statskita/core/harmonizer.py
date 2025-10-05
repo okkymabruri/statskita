@@ -340,7 +340,9 @@ class SurveyHarmonizer:
                 # Minimal fallback for waves without config
                 for fallback_col in ["DEM_AGE", "K10", "B4K10", "K9"]:
                     if fallback_col in df.columns:
-                        harmonized_df = harmonized_df.with_columns(pl.col(fallback_col).alias("age"))
+                        harmonized_df = harmonized_df.with_columns(
+                            pl.col(fallback_col).alias("age")
+                        )
                         mapping_log[fallback_col] = "age (fallback)"
                         break
 
@@ -349,9 +351,7 @@ class SurveyHarmonizer:
         # Available in: 2023-02, 2023-08, 2024-02, 2025-02
         # Values: 1=Employed, 2=Unemployed, 4=School, 5=Housework, 6=Other
         if "JENISKEGIA" in df.columns:
-            harmonized_df = harmonized_df.with_columns(
-                pl.col("JENISKEGIA").alias("work_status")
-            )
+            harmonized_df = harmonized_df.with_columns(pl.col("JENISKEGIA").alias("work_status"))
             mapping_log["JENISKEGIA"] = "work_status"
 
         # Note: 2024-08 wave is under investigation for work status derivation

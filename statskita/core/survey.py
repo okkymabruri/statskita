@@ -88,6 +88,7 @@ class SurveyDesign:
         ssu_col: Optional[str] = None,
         fpc: bool = True,  # finite pop correction
         domain_cols: Optional[List[str]] = None,
+        wave: Optional[str] = None,
     ):
         """Initialize survey design.
 
@@ -99,6 +100,7 @@ class SurveyDesign:
             ssu_col: Column name for secondary sampling units
             fpc: Whether to apply finite population correction
             domain_cols: Columns defining domains for subgroup analysis
+            wave: Survey wave (e.g., '2024-03') for SUSENAS poverty indicators
         """
         self.data = data
         self.weight_col = weight_col
@@ -107,6 +109,7 @@ class SurveyDesign:
         self.ssu_col = ssu_col
         self.fpc = fpc
         self.domain_cols = domain_cols or []
+        self.wave = wave
 
         self._validate_design()
         self._setup_samplics_design()
@@ -551,6 +554,7 @@ def declare_survey(
     ssu: Optional[str] = None,
     fpc: bool = True,
     domain_cols: Optional[List[str]] = None,
+    wave: Optional[str] = None,
 ) -> SurveyDesign:
     """Declare survey design for existing data.
 
@@ -565,10 +569,13 @@ def declare_survey(
         ssu: Secondary sampling unit column
         fpc: Use finite population correction (default True)
         domain_cols: Columns defining domains for subgroup analysis
+        wave: Survey wave (e.g., '2024-03') for automatic poverty line loading
 
     Example:
-        >>> spec = sk.declare_survey(df, weight="WEIGHT", strata="STRATA", psu="PSU", ssu="SSU")
-        >>> tpak = spec.estimate_proportion("in_labor_force")
+        >>> spec = sk.declare_survey(df, weight="WEIGHT", strata="STRATA", psu="PSU")
+        >>> # SUSENAS with poverty indicators
+        >>> design = sk.declare_survey(df, weight="WEIND", wave="2024-03")
+        >>> results = sk.calculate_indicators(design, ["p0", "p1", "p2"])
     """
     return SurveyDesign(
         data=data,
@@ -578,6 +585,7 @@ def declare_survey(
         ssu_col=ssu,
         fpc=fpc,
         domain_cols=domain_cols,
+        wave=wave,
     )
 
 

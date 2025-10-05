@@ -244,9 +244,9 @@ def calculate_indicators_multi(
     # calculate indicators for each wave
     for wave, df in datasets.items():
         try:
-            # auto-detect weight column (harmonized data uses 'survey_weight')
+            # auto-detect weight column
             weight_col = None
-            for col in ["survey_weight", "WEIGHT", "WEIGHTR", "weight"]:
+            for col in ["survey_weight", "WEIND", "WEIGHT", "WEIGHTR", "WERT", "weight"]:
                 if col in df.columns:
                     weight_col = col
                     break
@@ -266,12 +266,13 @@ def calculate_indicators_multi(
                         strata_col = col
                         break
 
-            # declare survey design (strata=None by default to avoid singleton PSU)
+            # declare survey design (pass wave for automatic poverty line loading)
             design = declare_survey(
                 df,
                 weight=weight_col,
                 strata=strata_col,
                 psu=psu_col,
+                wave=wave if isinstance(wave, str) else None,
             )
 
             # calculate indicators
@@ -301,7 +302,9 @@ def calculate_indicators_multi(
         else:
             # simple pivot
             pivot_on = "wave"
-            index_cols = ["indicator", "unit"] if "unit" in combined_results.columns else "indicator"
+            index_cols = (
+                ["indicator", "unit"] if "unit" in combined_results.columns else "indicator"
+            )
 
         wide_results = combined_results.pivot(
             values="estimate", index=index_cols, on=pivot_on, aggregate_function="first"
@@ -378,7 +381,9 @@ def compare_waves(
     else:
         index_cols = ["indicator"]
 
-    wave_cols = [col for col in wide_df.columns if col not in index_cols and not col.endswith("_se")]
+    wave_cols = [
+        col for col in wide_df.columns if col not in index_cols and not col.endswith("_se")
+    ]
 
     # sort wave columns
     if wave_order:
@@ -393,9 +398,7 @@ def compare_waves(
         wave1, wave2 = wave_cols[0], wave_cols[1]
 
         # calculate change
-        result = wide_df.with_columns(
-            [(pl.col(wave2) - pl.col(wave1)).alias("change")]
-        )
+        result = wide_df.with_columns([(pl.col(wave2) - pl.col(wave1)).alias("change")])
 
         # select and order columns
         output_cols = index_cols + [wave1, wave2, "change"]

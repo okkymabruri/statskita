@@ -158,12 +158,13 @@ class SakernasLoader(BaseLoader):
         # warn about 2024-08 investigation status
         if wave == "2024-08":
             import warnings
+
             warnings.warn(
                 "2024-08 wave is currently under investigation for data quality validation. "
                 "For production use, we recommend waves: 2023-08, 2024-02, 2025-02. "
                 "See documentation for details.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
 
         # load configuration

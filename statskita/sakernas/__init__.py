@@ -76,7 +76,7 @@ def get_field_info(field_name: str, wave: str = "2025-02") -> dict:
         >>> info = sk.sakernas.get_field_info("DEM_SEX", wave="2025-02")
     """
     loader = _get_loader(wave)
-    return loader.get_variable_info(field_name)
+    return loader.describe(field_name)
 
 
 def clear_cache() -> None:

@@ -1,6 +1,6 @@
 """StatsKita: Python toolkit for Indonesian official microdata (SAKERNAS)."""
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Okky Mabruri"
 __email__ = "okkymbrur@gmail.com"
 

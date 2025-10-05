@@ -711,7 +711,6 @@ class IndicatorCalculator:
         self,
         by: Optional[List[str]] = None,
         confidence_level: float = 0.95,
-        exclude_single_person: bool = False,
     ) -> Dict[str, IndicatorResult]:
         """Calculate poverty headcount rate (P0) using KAPITA from blok43."""
 
@@ -741,7 +740,6 @@ class IndicatorCalculator:
         result_df = calculate_poverty_headcount(
             df_for_poverty,
             poverty_lines,
-            exclude_single_person=exclude_single_person,
         )
 
         # convert to IndicatorResult format
@@ -766,7 +764,6 @@ class IndicatorCalculator:
                 metadata={
                     "poor_population": poor_pop,
                     "total_population": total_pop,
-                    "exclude_single_person": exclude_single_person,
                 },
             )
         }
@@ -775,7 +772,6 @@ class IndicatorCalculator:
         self,
         by: Optional[List[str]] = None,
         confidence_level: float = 0.95,
-        exclude_single_person: bool = False,
     ) -> Dict[str, IndicatorResult]:
         """Calculate poverty gap index (P1)."""
 
@@ -801,7 +797,6 @@ class IndicatorCalculator:
             df_for_poverty,
             poverty_lines,
             alpha=1,
-            exclude_single_person=exclude_single_person,
         )
 
         # extract value
@@ -820,7 +815,7 @@ class IndicatorCalculator:
                 indicator_name="Poverty Gap Index (P1)",
                 estimate=estimate,
                 domain=None,
-                metadata={"exclude_single_person": exclude_single_person},
+                metadata={},
             )
         }
 
@@ -828,7 +823,6 @@ class IndicatorCalculator:
         self,
         by: Optional[List[str]] = None,
         confidence_level: float = 0.95,
-        exclude_single_person: bool = False,
     ) -> Dict[str, IndicatorResult]:
         """Calculate poverty severity index (P2)."""
 
@@ -854,7 +848,6 @@ class IndicatorCalculator:
             df_for_poverty,
             poverty_lines,
             alpha=2,
-            exclude_single_person=exclude_single_person,
         )
 
         severity_value = (
@@ -874,7 +867,7 @@ class IndicatorCalculator:
                 indicator_name="Poverty Severity Index (P2)",
                 estimate=estimate,
                 domain=None,
-                metadata={"exclude_single_person": exclude_single_person},
+                metadata={},
             )
         }
 
@@ -882,7 +875,6 @@ class IndicatorCalculator:
         self,
         by: Optional[List[str]] = None,
         confidence_level: float = 0.95,
-        exclude_single_person: bool = False,
     ) -> Dict[str, IndicatorResult]:
         """Calculate Gini coefficient for inequality measurement."""
 
@@ -919,7 +911,6 @@ class IndicatorCalculator:
             self.data,
             weight_col=weight_col,
             value_col=value_col,
-            exclude_single_person=exclude_single_person,
         )
 
         estimate = SurveyEstimate(
@@ -936,7 +927,6 @@ class IndicatorCalculator:
                 estimate=estimate,
                 domain=None,
                 metadata={
-                    "exclude_single_person": exclude_single_person,
                     "value_column": value_col,
                 },
             )
@@ -1091,7 +1081,6 @@ def calculate_indicators(
             results[indicator] = method(
                 by=by,
                 confidence_level=confidence_level,
-                exclude_single_person=kwargs.get("exclude_single_person", False),
             )
         else:  # unemployment_rate, average_wage, informal_employment_rate, per_capita_expenditure
             results[indicator] = method(by=by, confidence_level=confidence_level)

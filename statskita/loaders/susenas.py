@@ -17,30 +17,6 @@ from .base import BaseLoader, DatasetMetadata, SurveyDesignInfo
 class SusenasLoader(BaseLoader):
     """Loader for SUSENAS (Socioeconomic Survey) data files."""
 
-    FILE_PATTERNS = {
-        "2024-03": {
-            "kor": {
-                "rt": "ssn202403_kor_rt.dbf",
-                "ind1": "ssn202403_kor_ind1.dbf",
-                "ind2": "ssn202403_kor_ind2.dbf",
-                "mig": "ssn202403_kor_mig.dbf",
-            },
-            "kp": {
-                "food": [
-                    "ssn202403_kp_blok41_11_31.dbf",
-                    "ssn202403_kp_blok41_32_36.dbf",
-                    "ssn202403_kp_blok41_51_97.dbf",
-                ],
-                "nonfood": [
-                    "ssn202403_kp_blok42_11_31.dbf",
-                    "ssn202403_kp_blok42_32_36.dbf",
-                    "ssn202403_kp_blok42_51_97.dbf",
-                ],
-                "housing": "ssn202403_kp_blok43.dbf",
-            },
-        }
-    }
-
     def __init__(self, preserve_labels: bool = True):
         super().__init__(preserve_labels)
         self._value_labels: Optional[Dict[str, Dict[Any, str]]] = None
@@ -48,6 +24,8 @@ class SusenasLoader(BaseLoader):
         self._config: Optional[Dict[str, Any]] = None
         self._data_dir: Optional[Path] = None
         self._reverse_mappings: Optional[Dict[str, List[str]]] = None
+        self._file_patterns: Optional[Dict[str, Any]] = None
+        self._wave: Optional[str] = None
 
     def load(
         self,
@@ -79,6 +57,11 @@ class SusenasLoader(BaseLoader):
         # detect wave if not provided
         if not wave:
             wave = "2024-03"  # default for now
+
+        self._wave = wave
+
+        # detect available files for wave
+        self._file_patterns = self._detect_files(wave)
 
         # load config
         self._load_config(wave)
@@ -122,11 +105,18 @@ class SusenasLoader(BaseLoader):
 
     def _load_kor_module(self, merged: bool, table: Optional[str]) -> pl.DataFrame:
         """Load KOR module (household/individual data)."""
-        if not merged and table:
-            return self._load_dbf_file(self.FILE_PATTERNS["2024-03"]["kor"][table])
+        kor_files = self._file_patterns["kor"]
 
-        # load all KOR files
-        df_rt = self._load_dbf_file(self.FILE_PATTERNS["2024-03"]["kor"]["rt"])
+        if not merged and table:
+            if table not in kor_files:
+                raise ValueError(f"Table {table} not found. Available: {list(kor_files.keys())}")
+            return self._load_dbf_file(kor_files[table])
+
+        # load rt table
+        if "rt" not in kor_files:
+            raise ValueError(f"RT table not found. Available: {list(kor_files.keys())}")
+
+        df_rt = self._load_dbf_file(kor_files["rt"])
 
         if not merged:
             return df_rt
@@ -135,28 +125,36 @@ class SusenasLoader(BaseLoader):
 
     def _load_kp_module(self, category: str) -> pl.DataFrame:
         """Load KP module (consumption data)."""
-        kp_files = self.FILE_PATTERNS["2024-03"]["kp"]
+        kp_files = self._file_patterns["kp"]
 
         if category == "food":
-            return self._load_and_stack(kp_files["food"])
+            if "food" not in kp_files:
+                raise ValueError(f"Food category not found. Available: {list(kp_files.keys())}")
+            files = kp_files["food"]
+            return self._load_and_stack(files) if isinstance(files, list) else self._load_dbf_file(files)
         elif category == "nonfood":
-            return self._load_and_stack(kp_files["nonfood"])
+            if "nonfood" not in kp_files:
+                raise ValueError(f"Nonfood category not found. Available: {list(kp_files.keys())}")
+            files = kp_files["nonfood"]
+            return self._load_and_stack(files) if isinstance(files, list) else self._load_dbf_file(files)
         elif category == "housing":
-            return self._load_dbf_file(kp_files["housing"])
+            if "housing" not in kp_files:
+                raise ValueError(f"Housing category not found. Available: {list(kp_files.keys())}")
+            files = kp_files["housing"]
+            return self._load_and_stack(files) if isinstance(files, list) else self._load_dbf_file(files)
         elif category == "all":
-            df_food = self._load_and_stack(kp_files["food"]).with_columns(
-                pl.lit("food").alias("_kp_category")
-            )
-            df_nonfood = self._load_and_stack(kp_files["nonfood"]).with_columns(
-                pl.lit("nonfood").alias("_kp_category")
-            )
-            df_housing = self._load_dbf_file(kp_files["housing"]).with_columns(
-                pl.lit("housing").alias("_kp_category")
-            )
+            dfs = []
+            for cat in ["food", "nonfood", "housing"]:
+                if cat in kp_files:
+                    files = kp_files[cat]
+                    df = self._load_and_stack(files) if isinstance(files, list) else self._load_dbf_file(files)
+                    df = df.with_columns(pl.lit(cat).alias("_kp_category"))
+                    dfs.append(df)
 
-            return pl.concat(
-                [df_food, df_nonfood, df_housing], how="diagonal_relaxed"
-            )
+            if not dfs:
+                raise ValueError("No KP files found")
+
+            return pl.concat(dfs, how="diagonal_relaxed")
         else:
             raise ValueError(f"Invalid category: {category}")
 
@@ -201,7 +199,7 @@ class SusenasLoader(BaseLoader):
             df = self._load_dbf_file(filename)
             dfs.append(df)
 
-        return pl.concat(dfs, how="vertical")
+        return pl.concat(dfs, how="diagonal_relaxed")
 
     def _load_config(self, wave: Optional[str] = None):
         """Load configuration from YAML files."""
@@ -253,6 +251,77 @@ class SusenasLoader(BaseLoader):
             reverse.setdefault(canon, []).append(raw_name)
 
         self._reverse_mappings = reverse
+
+    def _detect_files(self, wave: str) -> Dict[str, Any]:
+        """Auto-detect available files for a wave."""
+        pattern = f"susenas_{wave}_*"
+        parquet_files = list(self._data_dir.glob(f"{pattern}.parquet"))
+
+        if not parquet_files:
+            # check -pq directory
+            if "bps-susenas" in str(self._data_dir):
+                pq_dir = Path(str(self._data_dir).replace("bps-susenas", "bps-susenas-pq"))
+                if pq_dir.exists():
+                    parquet_files = list(pq_dir.glob(f"{pattern}.parquet"))
+
+        # fallback to dbf
+        files = parquet_files if parquet_files else list(self._data_dir.glob(f"{pattern}.dbf"))
+
+        if not files:
+            available_waves = self._get_available_waves()
+            raise FileNotFoundError(
+                f"No files found for wave {wave}. Available: {', '.join(available_waves) if available_waves else 'none'}"
+            )
+
+        # parse and group
+        kor_files = {}
+        kp_groups = {"food": [], "nonfood": [], "housing": []}
+
+        for file in files:
+            parts = file.stem.split("_")
+            if len(parts) < 4:
+                continue
+
+            module = parts[2]
+            submodule = parts[3]
+
+            if module == "kor":
+                kor_files[submodule] = file.stem
+            elif module == "kp":
+                category_map = {"blok41": "food", "blok42": "nonfood", "blok43": "housing"}
+                category = category_map.get(submodule)
+                if category:
+                    kp_groups[category].append(file.stem)
+
+        # convert single-item lists to strings
+        kp_files = {}
+        for category, files_list in kp_groups.items():
+            if len(files_list) == 0:
+                continue
+            elif len(files_list) == 1:
+                kp_files[category] = files_list[0]
+            else:
+                kp_files[category] = sorted(files_list)
+
+        return {"kor": kor_files, "kp": kp_files}
+
+    def _get_available_waves(self) -> List[str]:
+        """Get list of available waves in data directory."""
+        files = list(self._data_dir.glob("susenas_*"))
+
+        # check -pq directory too
+        if "bps-susenas" in str(self._data_dir):
+            pq_dir = Path(str(self._data_dir).replace("bps-susenas", "bps-susenas-pq"))
+            if pq_dir.exists():
+                files.extend(list(pq_dir.glob("susenas_*")))
+
+        waves = set()
+        for file in files:
+            parts = file.stem.split("_")
+            if len(parts) >= 2:
+                waves.add(parts[1])
+
+        return sorted(waves)
 
 
 def load_susenas(

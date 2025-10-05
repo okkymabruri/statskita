@@ -18,7 +18,6 @@ def calculate_poverty_fgt(
     df_blok43: pl.DataFrame,
     poverty_lines: Dict[Tuple[str, str], float],
     alpha: float = 0,
-    exclude_single_person: bool = False,
     design: Optional[SurveyDesign] = None,
 ) -> pl.DataFrame:
     """Calculate Foster-Greer-Thorbecke (FGT) poverty measures.
@@ -32,37 +31,35 @@ def calculate_poverty_fgt(
         df_blok43: SUSENAS blok43 data with KAPITA column
         poverty_lines: Dict mapping (province, urban/rural) to poverty lines
         alpha: FGT parameter (0, 1, or 2)
-        exclude_single_person: Whether to exclude single-person households (R301=1)
-                             Set True to match BPS methodology (9.03%)
         design: Survey design (optional)
 
     Returns:
         DataFrame with FGT poverty measure
-    """
-    # apply single-person exclusion to match BPS methodology
-    if exclude_single_person:
-        df_blok43 = df_blok43.filter(pl.col("R301") != 1)
 
-    # continue with existing implementation
+    Note:
+        BPS uses ALL households in poverty calculations (no exclusions).
+    """
     return _calculate_poverty_internal(df_blok43, poverty_lines, alpha, design)
 
 
 def calculate_poverty_headcount(
     df_blok43: pl.DataFrame,
     poverty_lines: Dict[Tuple[str, str], float],
-    exclude_single_person: bool = False,
     design: Optional[SurveyDesign] = None,
 ) -> pl.DataFrame:
     """Calculate poverty headcount rate using KAPITA from blok43.
 
-    Uses BPS pre-calculated KAPITA values when available (Stata files).
-    Set exclude_single_person=True to match BPS methodology.
+    Uses BPS pre-calculated KAPITA values from blok43.
+    BPS methodology uses ALL households (no exclusions).
 
-    Returns DataFrame with poverty_rate_pct, poor_population, total_population.
+    Args:
+        df_blok43: SUSENAS blok43 data with KAPITA column
+        poverty_lines: Dict mapping (province, urban/rural) to poverty lines
+        design: Survey design (optional)
+
+    Returns:
+        DataFrame with poverty_rate_pct, poor_population, total_population.
     """
-    # apply single-person exclusion to match BPS methodology
-    if exclude_single_person:
-        df_blok43 = df_blok43.filter(pl.col("R301") != 1)
 
     # check if KAPITA exists and is populated
     if "KAPITA" not in df_blok43.columns and "kapita" not in df_blok43.columns:
@@ -128,8 +125,14 @@ def calculate_poverty_headcount(
     )
 
     # calculate WEIGHTED poverty rate (individual-level)
-    total_pop = (df["r301"] * df["wert"]).sum()
-    poor_pop = (df.filter(pl.col("is_poor"))["r301"] * df.filter(pl.col("is_poor"))["wert"]).sum()
+    if "weind" in df.columns:
+        weights = df["weind"].cast(pl.Float64)
+        poor_weights = df.filter(pl.col("is_poor"))["weind"].cast(pl.Float64)
+        total_pop = weights.sum()
+        poor_pop = poor_weights.sum()
+    else:
+        total_pop = (df["r301"] * df["wert"]).sum()
+        poor_pop = (df.filter(pl.col("is_poor"))["r301"] * df.filter(pl.col("is_poor"))["wert"]).sum()
 
     if total_pop == 0:
         warnings.warn("Total population weight is zero")

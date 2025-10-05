@@ -1,0 +1,288 @@
+# SUSENAS Base Configuration
+# National Socioeconomic Survey (Survei Sosial Ekonomi Nasional)
+
+dataset: susenas
+version: '1.0'
+description: SUSENAS household consumption and welfare survey configuration
+
+# Dataset metadata
+metadata:
+  dataset_type: multi_module_household_survey
+  modules: [kor, kp]
+  primary_unit: household
+  secondary_unit: individual
+  coverage: district_level  # March waves
+
+# Module definitions
+modules:
+  kor:
+    description: Core household and individual characteristics
+    files:
+      rt:
+        level: household
+        primary_key: URUT
+        weight_var: FWT
+        description: Household roster
+      ind1:
+        level: individual
+        primary_key: [URUT, R401]
+        weight_var: WI1
+        description: Individual demographics, labor
+      ind2:
+        level: individual
+        primary_key: [URUT, R401]
+        weight_var: WI2
+        description: Individual health, education
+      mig:
+        level: individual
+        primary_key: [URUT, R401]
+        description: Migration history
+
+  kp:
+    description: Consumption and expenditure module
+    categories:
+      food:
+        files: 3  # blok41 split across 3 files
+        recall_period: 7_days
+        recall_period_days: 7
+        conversion_to_monthly: 4.285714  # 30/7
+        key_variables:
+          - B41K5: quantity_purchased_weekly
+          - B41K6: value_purchased_weekly
+          - B41K7: quantity_own_production_weekly
+          - B41K8: value_own_production_weekly
+          - B41K9: total_quantity_weekly
+          - B41K10: total_value_weekly
+        aggregation: sum_by_household
+
+      nonfood:
+        files: 3  # blok42 split across 3 files
+        categories:
+          monthly:
+            recall_period: 1_month
+            conversion_factor: 1.0
+            variables: [B42K4]
+          annual:
+            recall_period: 12_months
+            conversion_factor: 0.083333  # 1/12
+            variables: [B42K5]
+        aggregation: sum_by_household
+
+      housing:
+        files: 1  # blok43
+        description: Housing expenditure summary
+        precalculated_vars:
+          FOOD: household_food_monthly
+          NONFOOD: household_nonfood_monthly
+          EXPEND: household_total_monthly
+          KAPITA: per_capita_monthly
+        note: "In 2024-03 public data, all precalculated vars are NULL"
+
+# Field definitions (minimal schema for inheritance)
+fields:
+  URUT:
+    label: Household identifier
+    module: kor
+    dtype: i64
+    canon_name: household_id
+    category: identifiers
+  R401:
+    label: Person number
+    module: ind1
+    dtype: i64
+    canon_name: person_number
+    category: identifiers
+  R101:
+    label: Province code
+    module: kor
+    dtype: i64
+    canon_name: province_code
+    category: geography
+  R105:
+    label: Urban / rural
+    module: kor
+    dtype: i64
+    canon_name: urban_rural
+    category: geography
+    codelist: urban_rural
+  R301:
+    label: Household size
+    module: kor
+    dtype: i64
+    canon_name: household_size
+    category: demographics
+  FWT:
+    label: Household weight (core)
+    module: kor
+    dtype: f64
+    canon_name: household_weight
+    category: weights
+  WERT:
+    label: Consumption weight (KP)
+    module: kp
+    dtype: f64
+    canon_name: consumption_weight
+    category: weights
+  WEIND:
+    label: Individual weight (derived)
+    module: kp
+    dtype: f64
+    canon_name: individual_weight
+    category: weights
+  STRATA:
+    label: Strata
+    module: kor
+    dtype: i64
+    canon_name: strata
+    category: survey_design
+  PSU:
+    label: Primary sampling unit
+    module: kor
+    dtype: i64
+    canon_name: psu
+    category: survey_design
+  B41K10:
+    label: Food expenditure (weekly total)
+    module: kp
+    dtype: f64
+    canon_name: food_weekly
+    category: consumption
+  B42K4:
+    label: Non-food expenditure (monthly)
+    module: kp
+    dtype: f64
+    canon_name: nonfood_monthly
+    category: consumption
+  B42K5:
+    label: Non-food expenditure (annual)
+    module: kp
+    dtype: f64
+    canon_name: nonfood_annual
+    category: consumption
+  FOOD:
+    label: Household monthly food (blok43)
+    module: kp
+    dtype: f64
+    canon_name: food_monthly_block43
+    category: consumption
+  NONFOOD:
+    label: Household monthly non-food (blok43)
+    module: kp
+    dtype: f64
+    canon_name: nonfood_monthly_block43
+    category: consumption
+  EXPEND:
+    label: Household total monthly expenditure (blok43)
+    module: kp
+    dtype: f64
+    canon_name: total_monthly_block43
+    category: consumption
+  KAPITA:
+    label: Per capita monthly expenditure (blok43)
+    module: kp
+    dtype: f64
+    canon_name: per_capita_block43
+    category: consumption
+
+# Shared codelists for SUSENAS waves
+codelists:
+  urban_rural:
+    1: Urban
+    2: Rural
+  province_codes:
+    11: Aceh
+    12: Sumatera Utara
+    13: Sumatera Barat
+    14: Riau
+    15: Jambi
+    16: Sumatera Selatan
+    17: Bengkulu
+    18: Lampung
+    19: Kepulauan Bangka Belitung
+    21: Kepulauan Riau
+    31: DKI Jakarta
+    32: Jawa Barat
+    33: Jawa Tengah
+    34: DI Yogyakarta
+    35: Jawa Timur
+    36: Banten
+    51: Bali
+    52: Nusa Tenggara Barat
+    53: Nusa Tenggara Timur
+    61: Kalimantan Barat
+    62: Kalimantan Tengah
+    63: Kalimantan Selatan
+    64: Kalimantan Timur
+    65: Kalimantan Utara
+    71: Sulawesi Utara
+    72: Sulawesi Tengah
+    73: Sulawesi Selatan
+    74: Sulawesi Tenggara
+    75: Gorontalo
+    76: Sulawesi Barat
+    81: Maluku
+    82: Maluku Utara
+    91: Papua Barat
+    92: Papua Barat Daya
+    94: Papua
+    95: Papua Selatan
+    96: Papua Tengah
+    97: Papua Pegunungan
+
+# Canonical variable names
+canonical_names:
+  # Identifiers
+  household_id: URUT
+  person_number: R401
+
+  # Geographic
+  province_code: R101
+  district_code: R102
+  urban_rural: R105
+
+  # Demographics
+  household_size: R301
+  sex: R402
+  age: R403
+
+  # Weights
+  household_weight: FWT      # KOR module
+  consumption_weight: WERT    # KP module
+  individual_weight: WI1      # Individual level
+
+  # Expenditure components
+  food_weekly: B41K10
+  nonfood_monthly: B42K4
+  nonfood_annual: B42K5
+
+# Survey design
+survey_design:
+  weight_var: WERT           # Use consumption weight for expenditure
+  alt_weight_var: FWT        # Household weight from KOR
+  strata_var: STRATA
+  psu_var: PSU
+  ssu_var: SSU
+  fpc: true
+  domain_vars: [R101, R102, R105]
+
+# Value mappings
+value_mappings:
+  urban_rural:
+    1: Urban
+    2: Rural
+    labels:
+      1: Perkotaan
+      2: Perdesaan
+
+  sex:
+    1: Male
+    2: Female
+    labels:
+      1: Laki-laki
+      2: Perempuan
+
+# Geographic levels
+geographic_levels:
+  - national
+  - provincial   # 38 provinces
+  - district     # 514 kabupaten/kota (March waves)

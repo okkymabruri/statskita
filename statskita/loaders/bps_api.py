@@ -116,7 +116,9 @@ def load_poverty_lines_from_config(year: int = 2024, period: str = "march") -> D
         601871
     """
     from pathlib import Path
+
     import yaml
+
     from ..indicators.poverty import PROVINCE_CODE_TO_NAME
 
     month = "03" if period == "march" else "09"
